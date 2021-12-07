@@ -1,48 +1,89 @@
 module BuildContext
-  macro capture_elems(&blk)
+  macro capture_elems(io, &blk)
     {% if blk %}
       {% if blk.body.is_a?(Expressions) %}
-        [
         {% for exp in blk.body.expressions %}
-          {{exp}},
-        {% end %}
-        ] of (Elmnt | String | -> String)
-      {% else %}
-        [
-          {% if blk.body.is_a?(Call) && blk.body.name != "div" %}
-            -> { _m.{{blk.body.name}} }
-          {% else %}
-            {{blk.body}}
+          {% if exp.is_a?(Call) %}
+            {% if exp.block %}
+              {{exp.name}}({{exp.args.unshift(io.id).splat}}) do
+                BuildContext.capture_elems(io) {{exp.block}}
+              end
+            {% else %}
+              {{exp.name}}({{exp.args.unshift(io).splat}})
+            {% end %}
           {% end %}
-        ] of (Elmnt | String | -> String)
+        {% end %}
+      {% else %}
+        {% if blk.body.is_a?(Call) %}
+          {% if blk.body.block %}
+            {{blk.body.name}}({{blk.body.args.unshift(io).splat}}) do
+              BuildContext.capture_elems(io) {{blk.body.block}}
+            end
+          {% else %}
+            {{blk.body.name}}({{blk.body.args.unshift(io).splat}})
+          {% end %}
+        {% end %}
       {% end %}
     {% end %}
+    {{debug}}
   end
 end
 
-class View
-  @@elems = [] of (Elmnt | String | -> String)
+class View(T)
+  @model : T
+
+  def initialize(@model)
+  end
 
   macro template(&blk)
-    @@elems = BuildContext.capture_elems {{blk}}
-  end
-
-  macro div(css_class = nil, &block)
-    {% if block %}
-      Elmnt.new({{css_class}}, BuildContext.capture_elems {{block}})
-    {% else %}
-      Elmnt.new({{css_class}})
-    {% end %}
-  end
-
-  def self.render(_m)
-    @@elems.map do |elem|
-      if elem.responds_to? :render
-        elem.render(_m)
-      else
-        elem.to_s
+    def render
+      String.build do |io|
+        BuildContext.capture_elems(io) {{blk}}
       end
-    end.join("\n")
+    end
+    {{debug}}
+  end
+
+  macro div(io, css_class = nil, &block)
+    tag({{io.id}}, "div", false, {{css_class}}) {{block}}
+  end
+
+  @[AlwaysInline]
+  def tag(io : String::Builder, name : String, standalone : Bool, css_class : String? = nil)
+    io << "<"
+    io << name
+    if css_class
+      io << " class=\""
+      io << css_class
+      io << "\""
+    end
+    if standalone
+      io << "/>"
+      return
+    end
+    io << ">"
+    yield(io)
+    io << "</"
+    io << name
+    io << ">"
+  end
+
+  def tag(io : String::Builder, name : String, standalone : Bool, css_class : String? = nil)
+    io << "<"
+    io << name
+    if css_class
+      io << " class=\""
+      io << css_class
+      io << "\""
+    end
+    if standalone
+      io << "/>"
+      return
+    end
+    io << ">"
+    io << "</"
+    io << name
+    io << ">"
   end
 end
 
@@ -82,23 +123,21 @@ class MyData
   end
 end
 
-class MyView < View
+class MyView(T) < View(T)
   template do
     div do
-      div "bla"
-      div "blu"
+      div "bla" do
+        div
+      end
+      div "blu" do
+        div "mama"
+      end
     end
     div do
-      div "gu" do
-        div do
-          theprop
-        end
-      end
-      div "ga" do
-        "lulu"
-      end
+      div "gu"
+      div "ga"
     end
   end
 end
 
-puts MyView(MyData).render(MyData.new)
+puts MyView(MyData).new(MyData.new).render
