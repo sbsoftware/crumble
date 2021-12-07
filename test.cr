@@ -1,27 +1,41 @@
 module BuildContext
-  macro capture_elems(io, &blk)
+  TAG_METHODS = ["div"]
+
+  macro capture_elems(&blk)
     {% if blk %}
       {% if blk.body.is_a?(Expressions) %}
         {% for exp in blk.body.expressions %}
           {% if exp.is_a?(Call) %}
-            {% if exp.block %}
-              {{exp.name}}({{exp.args.unshift(io.id).splat}}) do
-                BuildContext.capture_elems(io) {{exp.block}}
-              end
+            {% if TAG_METHODS.includes?(exp.name.stringify) %}
+              {% if exp.block %}
+                {{exp.name}}({{exp.args.splat}}) do
+                  BuildContext.capture_elems {{exp.block}}
+                end
+              {% else %}
+                {{exp.name}}({{exp.args.splat}})
+              {% end %}
             {% else %}
-              {{exp.name}}({{exp.args.unshift(io).splat}})
+              __tplio__ << {{exp.name}}({{exp.args.splat}}) {{exp.block}}
             {% end %}
+          {% elsif exp.is_a?(StringLiteral) %}
+            __tplio__ << {{exp + "\n"}}
           {% end %}
         {% end %}
       {% else %}
         {% if blk.body.is_a?(Call) %}
-          {% if blk.body.block %}
-            {{blk.body.name}}({{blk.body.args.unshift(io).splat}}) do
-              BuildContext.capture_elems(io) {{blk.body.block}}
-            end
+          {% if TAG_METHODS.includes?(blk.body.name.stringify) %}
+            {% if blk.body.block %}
+              {{blk.body.name}}({{blk.body.args.splat}}) do
+                BuildContext.capture_elems {{blk.body.block}}
+              end
+            {% else %}
+              {{blk.body.name}}({{blk.body.args.splat}})
+            {% end %}
           {% else %}
-            {{blk.body.name}}({{blk.body.args.unshift(io).splat}})
+            __tplio__ << {{blk.body.name}}({{blk.body.args.splat}}) {{blk.body.block}}
           {% end %}
+        {% elsif blk.body.is_a?(StringLiteral) %}
+          __tplio__ << {{blk.body + "\n"}}
         {% end %}
       {% end %}
     {% end %}
@@ -32,20 +46,22 @@ end
 class View(T)
   @model : T
 
+  forward_missing_to @model
+
   def initialize(@model)
   end
 
   macro template(&blk)
     def render
-      String.build do |io|
-        BuildContext.capture_elems(io) {{blk}}
+      String.build do |__tplio__|
+        BuildContext.capture_elems {{blk}}
       end
     end
     {{debug}}
   end
 
-  macro div(io, css_class = nil, &block)
-    tag({{io.id}}, "div", false, {{css_class}}) {{block}}
+  macro div(css_class = nil, &block)
+    tag(__tplio__, "div", false, {{css_class}}) {{block}}
   end
 
   @[AlwaysInline]
@@ -58,14 +74,14 @@ class View(T)
       io << "\""
     end
     if standalone
-      io << "/>"
+      io << "/>\n"
       return
     end
-    io << ">"
+    io << ">\n"
     yield(io)
     io << "</"
     io << name
-    io << ">"
+    io << ">\n"
   end
 
   def tag(io : String::Builder, name : String, standalone : Bool, css_class : String? = nil)
@@ -77,13 +93,13 @@ class View(T)
       io << "\""
     end
     if standalone
-      io << "/>"
+      io << "/>\n"
       return
     end
     io << ">"
     io << "</"
     io << name
-    io << ">"
+    io << ">\n"
   end
 end
 
@@ -117,7 +133,7 @@ class Elmnt
 end
 
 class MyData
-  @theprop : String
+  getter theprop : String
 
   def initialize(@theprop = "Penis")
   end
@@ -127,17 +143,24 @@ class MyView(T) < View(T)
   template do
     div do
       div "bla" do
-        div
+        div "mega" do
+          theprop
+        end
       end
       div "blu" do
-        div "mama"
+        div "mama" do
+          "Inhalt"
+        end
       end
     end
     div do
       div "gu"
-      div "ga"
+      div "ga" do
+        "Penis"
+        "Vagina"
+      end
     end
   end
 end
 
-puts MyView(MyData).new(MyData.new).render
+puts MyView(MyData).new(MyData.new("PIMMEL")).render
