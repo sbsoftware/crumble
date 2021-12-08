@@ -117,6 +117,10 @@ class MyData
   def theklass
     "special"
   end
+
+  def default_view
+    MyView(self).new(self)
+  end
 end
 
 record MyOtherData, theprop : String, theklass : String
@@ -163,7 +167,7 @@ end
 
 record SiteStructure, site_title : String, site_body : Template
 
-puts MyView(MyData).new(MyData.new("PIMMEL")).render
+puts MyData.new("PIMMEL").default_view.render
 puts "#####"
 puts MyView(MyOtherData).new(MyOtherData.new("Suburu", "geneter")).render
 puts "#####"
