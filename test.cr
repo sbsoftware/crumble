@@ -1,6 +1,4 @@
 module BuildContext
-  TAG_METHODS = ["html", "head", "title", "body", "div", "strong"]
-
   macro capture_elems(&blk)
     {% if blk %}
       {% if blk.body.is_a?(Expressions) %}
@@ -13,12 +11,11 @@ module BuildContext
         BuildContext.eval_exp {{blk}}
       {% end %}
     {% end %}
-    {{debug}}
   end
 
   macro eval_exp(&blk)
     {% if blk.body.is_a?(Call) %}
-      {% if TAG_METHODS.includes?(blk.body.name.stringify) %}
+      {% if Template::TAG_NAMES.includes?(blk.body.name.stringify) %}
         {% if blk.body.block %}
           {{blk.body.name}}({{blk.body.args.splat}}) do
             BuildContext.capture_elems {{blk.body.block}}
@@ -42,6 +39,8 @@ module BuildContext
 end
 
 class Template
+  TAG_NAMES = %w(html head title body div strong)
+
   # default implementation to calm down the compiler
   def render
     ""
@@ -55,29 +54,11 @@ class Template
     end
   end
 
-  macro html(&block)
-    tag(__tplio__, "html", false, nil) {{block}}
-  end
-
-  macro head(&block)
-    tag(__tplio__, "head", false, nil) {{block}}
-  end
-
-  macro title(&block)
-    tag(__tplio__, "title", false, nil) {{block}}
-  end
-
-  macro body(css_class = nil, &block)
-    tag(__tplio__, "body", false, {{css_class}}) {{block}}
-  end
-
-  macro div(css_class = nil, &block)
-    tag(__tplio__, "div", false, {{css_class}}) {{block}}
-  end
-
-  macro strong(css_class = nil, &block)
-    tag(__tplio__, "strong", false, {{css_class}}) {{block}}
-  end
+  {% for tag_name in TAG_NAMES %}
+    macro {{tag_name.id}}(css_class = nil, &block)
+      tag(__tplio__, {{tag_name}}, false, \{{css_class}}) \{{block}}
+    end
+  {% end %}
 
   @[AlwaysInline]
   def tag(io : String::Builder, name : String, standalone : Bool, css_class : String? = nil)
