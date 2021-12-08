@@ -1,5 +1,5 @@
 module BuildContext
-  TAG_METHODS = ["div"]
+  TAG_METHODS = ["div", "strong"]
 
   macro capture_elems(&blk)
     {% if blk %}
@@ -39,7 +39,6 @@ module BuildContext
         {% end %}
       {% end %}
     {% end %}
-    {{debug}}
   end
 end
 
@@ -57,11 +56,14 @@ class View(T)
         BuildContext.capture_elems {{blk}}
       end
     end
-    {{debug}}
   end
 
   macro div(css_class = nil, &block)
     tag(__tplio__, "div", false, {{css_class}}) {{block}}
+  end
+
+  macro strong(css_class = nil, &block)
+    tag(__tplio__, "strong", false, {{css_class}}) {{block}}
   end
 
   @[AlwaysInline]
@@ -103,48 +105,26 @@ class View(T)
   end
 end
 
-class Elmnt
-  @tag_name : String = "div"
-  @css_class : String?
-  @elems : Array(Elmnt | String | -> String)
-
-  def initialize(@css_class = nil, @elems = [] of Elmnt | String | -> String)
-  end
-
-  def render(_m) : String
-    "<#{@tag_name} class=\"#{@css_class}\">#{render_elems(_m)}</#{@tag_name}>"
-  end
-
-  def render_elems(_m)
-    rendered = @elems.map do |elem|
-      if elem.responds_to? :render
-        elem.render(_m)
-      else
-        elem.to_s
-      end
-    end.join("\n  ")
-
-    if rendered.size > 0
-      "\n  #{rendered}\n"
-    else
-      ""
-    end
-  end
-end
-
 class MyData
   getter theprop : String
 
   def initialize(@theprop = "Penis")
   end
+
+  def theklass
+    "special"
+  end
 end
+
+record MyOtherData, theprop : String, theklass : String
 
 class MyView(T) < View(T)
   template do
     div do
       div "bla" do
-        div "mega" do
-          theprop
+        div theklass do
+          "This is:"
+          strong { theprop }
         end
       end
       div "blu" do
@@ -164,3 +144,5 @@ class MyView(T) < View(T)
 end
 
 puts MyView(MyData).new(MyData.new("PIMMEL")).render
+puts "#####"
+puts MyView(MyOtherData).new(MyOtherData.new("Suburu", "geneter")).render
