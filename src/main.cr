@@ -75,17 +75,21 @@ class MyLayout(T) < View(T)
   end
 end
 
-record SiteStructure, site_title : String, site_body : Template
+record SiteStructure, site_title : String, site_body : Template do
+  def layout
+    MyLayout(self).new(self)
+  end
+end
 
 server = HTTP::Server.new do |ctx|
-  if ctx.request.path.includes?(".css")
+  if ctx.request.path.includes?("style.css")
     ctx.response.content_type = "text/css"
     {% begin %}
       ctx.response.print([{{ CSS::CSSClass.all_subclasses.splat }}].map(&.to_css).join("\n"))
     {% end %}
   else
     ctx.response.content_type = "text/html"
-    ctx.response.print MyLayout(SiteStructure).new(SiteStructure.new("WORKING TITLE", MyData.new("important things").default_view))
+    ctx.response.print SiteStructure.new("WORKING TITLE", MyData.new("important things").default_view).layout
   end
 end
 
