@@ -1,4 +1,6 @@
 require "css"
+require "template/view"
+require "http/server"
 
 class MyClass < CSS::CSSClass
   backgroundColor Silver
@@ -7,66 +9,86 @@ end
 
 class MyOtherClass < CSS::CSSClass
   backgroundColor({0xFFu8, 0xFFu8, 0xFFu8})
+  color Blue
+end
+
+class RedClass < CSS::CSSClass
+  backgroundColor Red
   color White
 end
 
-enum Tag
-  Div
-
-  def to_s
-    case self
-    in Div then "div"
-    end
-  end
-end
-
 class MyData
-  @prop1 : String?
-  @prop2 : Int32?
-end
+  getter theprop : String
 
-class HTMLElement
-  @tag_name : Tag
-  @content : Array(HTMLElement | String)
-  @css_class : CSS::CSSClass.class | Nil
-
-  def initialize(@tag_name = Tag::Div, @css_class = nil)
-    @content = [] of Array(HTMLElement | String)
+  def initialize(@theprop = "Penis")
   end
 
-  def to_s
-    "<#{@tag_name.to_s} style=\"#{@css_class.try &.to_inline_css}\">#{@content.map(&:to_s).join}</#{@tag_name.to_s}>"
+  def theklass
+    MyOtherClass
+  end
+
+  def default_view
+    MyView(self).new(self)
   end
 end
 
-abstract class HTMLView
-  def initialize
-    @elements = [] of HTMLElement
-    elements
-  end
+record MyOtherData, theprop : String, theklass : String
 
-  abstract def elements
-  
-  def div(css_class)
-    @elements << HTMLElement.new(Tag::Div, css_class)
-  end
-  
-  def to_s
-    @elements.map(&.to_s).join("\n")
-  end
-end
-
-class MyHTMLView < HTMLView
-  def elements
-    div(MyClass) do
-      "Test"
+class MyView(T) < View(T)
+  template do
+    div do
+      div MyClass do
+        div theklass, {"data-controller" => "Something"} do
+          "This is:"
+          strong { theprop }
+        end
+      end
+      div RedClass do
+        div do
+          "Inhalt"
+        end
+      end
     end
-    div(MyOtherClass) do
-      div(MyClass) do
+    div attrs: {"lang" => "EN"} do
+      div
+      div RedClass do
         "Penis"
+        "Vagina"
       end
     end
   end
 end
 
-puts MyHTMLView.new.to_s
+class MyLayout(T) < View(T)
+  template do
+    html do
+      head do
+        title do
+          site_title
+        end
+        link attrs: {"rel" => "stylesheet", "href" => "/style.css"}
+      end
+      body do
+        site_body
+      end
+    end
+  end
+end
+
+record SiteStructure, site_title : String, site_body : Template
+
+server = HTTP::Server.new do |ctx|
+  if ctx.request.path.includes?(".css")
+    ctx.response.content_type = "text/css"
+    {% begin %}
+      ctx.response.print([{{ CSS::CSSClass.all_subclasses.splat }}].map(&.to_css).join("\n"))
+    {% end %}
+  else
+    ctx.response.content_type = "text/html"
+    ctx.response.print MyLayout(SiteStructure).new(SiteStructure.new("WORKING TITLE", MyData.new("important things").default_view))
+  end
+end
+
+address = server.bind_tcp 8080
+puts "Listening on http://#{address}"
+server.listen

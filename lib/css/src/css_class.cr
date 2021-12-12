@@ -28,7 +28,24 @@ module CSS
     end
 
     def self.to_inline_css
-      @@properties.join "; ", &.to_s
+      @@properties.join "; "
+    end
+
+    def self.to_css
+      String.build do |str|
+        str << "."
+        str << self
+        str << "{\n"
+        @@properties.each do |prop|
+          str << prop
+          str << ";\n"
+        end
+        str << "}\n"
+      end
+    end
+
+    def self.to_s(io : IO)
+      io << self.name.underscore
     end
   end
 end

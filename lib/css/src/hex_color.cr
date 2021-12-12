@@ -3,7 +3,10 @@ class HexColor
       
   def initialize(@components); end
       
-  def to_s
-    "##{@components[0].to_s(16, upcase: true)}#{@components[1].to_s(16, upcase: true)}#{@components[2].to_s(16, upcase: true)}"
+  def to_s(io : IO)
+    io << "#"
+    @components.each do |comp|
+      io << comp.to_s(16, upcase: true)
+    end
   end
 end

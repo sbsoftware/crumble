@@ -3,8 +3,10 @@ module CSS
     abstract def name  
     abstract def value
     
-    def to_s
-      "#{name}: #{value.to_s}"
+    def to_s(io : IO)
+      io << name
+      io << ": "
+      io << value
     end
   end
 end
