@@ -17,6 +17,15 @@ class RedClass < CSS::CSSClass
   color White
 end
 
+class TopAppBar < CSS::CSSClass
+end
+
+class Menu < CSS::CSSClass
+end
+
+class Content < CSS::CSSClass
+end
+
 class MyData
   getter theprop : String
 
@@ -81,6 +90,38 @@ record SiteStructure, site_title : String, site_body : Template do
   end
 end
 
+class PageTemplate(T) < View(T)
+  template do
+    page_menu
+    div TopAppBar do
+      page_title
+    end
+    div Content do
+      page_body
+    end
+  end
+end
+
+record PageStructure, page_title : String, page_menu : Template, page_body : Template do
+  def template
+    PageTemplate(self).new(self)
+  end
+end
+
+class MyMenu < Template
+  template do
+    nav Menu do
+      ul do
+        li do
+          a attrs: {"href" => "/home"} do
+            "Home"
+          end
+        end
+      end
+    end
+  end
+end
+
 server = HTTP::Server.new do |ctx|
   if ctx.request.path.includes?("style.css")
     ctx.response.content_type = "text/css"
@@ -89,7 +130,7 @@ server = HTTP::Server.new do |ctx|
     {% end %}
   else
     ctx.response.content_type = "text/html"
-    ctx.response.print SiteStructure.new("WORKING TITLE", MyData.new("important things").default_view).layout
+    ctx.response.print SiteStructure.new("WORKING TITLE", PageStructure.new("Home", MyMenu.new, MyData.new("Welcome!").default_view).template).layout
   end
 end
 

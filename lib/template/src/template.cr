@@ -1,7 +1,7 @@
 require "css"
 
 class Template
-  CONTENT_TAG_NAMES = %w(html head title body div strong form)
+  CONTENT_TAG_NAMES = %w(html head title body nav ul li a div strong form)
   STANDALONE_TAG_NAMES = %w(link)
 
   macro capture_elems(&blk)
