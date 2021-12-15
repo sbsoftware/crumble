@@ -3,6 +3,12 @@ require "./background_color"
 require "./color"
 require "./named_color"
 
+class String
+  def dasherize
+    underscore.gsub("_", "-")
+  end
+end
+
 module CSS
   abstract class CSSClass
     @@properties = [] of CSS::ClassProperty
@@ -45,7 +51,7 @@ module CSS
     end
 
     def self.to_s(io : IO)
-      io << self.name.underscore
+      io << self.name.dasherize
     end
   end
 end
