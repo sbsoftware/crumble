@@ -20,7 +20,7 @@ class Template
 
   macro eval_exp(&blk)
     {% if blk.body.is_a?(Call) %}
-      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES).includes?(blk.body.name.stringify) %}
+      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
         {% if blk.body.block %}
           {% if blk.body.named_args && blk.args.size > 0 %}
             {{blk.body.name}}({{blk.body.args.splat}}, {{blk.body.named_args.splat}}) do
@@ -35,11 +35,18 @@ class Template
           {{blk.body}}
         {% end %}
       {% else %}
-        __tplio__ << {{blk.body}}
+        {% if blk.body.block %}
+          {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
+            capture_elems {{blk.body.block}}
+          end
+        {% else %}
+          __tplio__ << {{blk.body}}
+        {% end %}
       {% end %}
     {% elsif blk.body.is_a?(StringLiteral) %}
       __tplio__ << {{blk.body + "\n"}}
     {% else %}
+      {{pp "Unknown node"}}
       {{pp blk.body}}
     {% end %}
   end
