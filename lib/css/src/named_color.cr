@@ -5,15 +5,12 @@ module CSS
     White
     Red
     Blue
+    Teal
+    Olive
+    Gold
 
     def to_s(io : IO)
-      io << case self
-            in Black then "black"
-            in Silver then "silver"
-            in White then "white"
-            in Red then "red"
-            in Blue then "blue"
-            end
+      io << self.to_s.dasherize
     end
   end
 end

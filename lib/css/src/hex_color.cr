@@ -1,7 +1,9 @@
 class HexColor
   @components : Tuple(UInt8, UInt8, UInt8)
       
-  def initialize(@components); end
+  def initialize(components)
+    @components = components.map(&.to_u8)
+  end
       
   def to_s(io : IO)
     io << "#"

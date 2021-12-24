@@ -1,7 +1,8 @@
 require "css"
+require "./tag_attrs"
 
 class Template
-  CONTENT_TAG_NAMES = %w(html head title body nav ul li a div strong form)
+  CONTENT_TAG_NAMES = %w(html head title body nav ul li a div strong form aside)
   STANDALONE_TAG_NAMES = %w(link)
 
   macro capture_elems(&blk)
@@ -62,59 +63,81 @@ class Template
   end
 
   {% for tag_name in CONTENT_TAG_NAMES %}
-    macro {{tag_name.id}}(css_class = nil, attrs = {} of String => String, &block)
-      tag(__tplio__, {{tag_name}}, \{{css_class}}, \{{attrs}}) \{{block}}
+    macro {{tag_name.id}}(*attrs, &block)
+      tag(__tplio__, {{tag_name}}, \{{attrs.splat}}) \{{block}}
     end
   {% end %}
 
   {% for tag_name in STANDALONE_TAG_NAMES %}
-    macro {{tag_name.id}}(css_class = nil, attrs = {} of String => String)
-      standalone_tag(__tplio__, {{tag_name}}, \{{css_class}}, \{{attrs}})
+    macro {{tag_name.id}}(*attrs)
+      standalone_tag(__tplio__, {{tag_name}}, \{{attrs.splat}})
     end
   {% end %}
 
-  def tag(io, name, css_class, attrs)
-    start_tag(io, name, css_class, attrs)
+  def tag(io, name, *attrs)
+    start_tag(io, name, *attrs)
     io << "\n"
     yield(io)
     end_tag(io, name)
   end
 
-  def tag(io, name, css_class, attrs)
-    start_tag(io, name, css_class, attrs)
+  def tag(io, name, *attrs)
+    start_tag(io, name, *attrs)
     end_tag(io, name)
   end
 
-  def standalone_tag(io, name, css_class, attrs)
-    tag_begin(io, name, css_class, attrs)
+  def standalone_tag(io, name, *attrs)
+    tag_begin(io, name, *attrs)
     io << "\>"
   end
 
-  @[AlwaysInline]
-  def tag_begin(io : IO, name : String, css_class : CSS::CSSClass.class | Nil, attrs : Hash(String, String))
+  def tag_begin(io : IO, name : String)
     io << "<"
     io << name
-    if css_class
-      io << " class=\""
-      io << css_class
-      io << "\""
+  end
+
+  def tag_begin(io : IO, name : String, *attrs : (CSS::ElementId.class | CSS::CSSClass.class | Template::TagAttrs))
+    io << "<"
+    io << name
+
+    class_io = String::Builder.new
+    idWritten = false
+
+    attrs.each do |attr|
+      case attr
+      in CSS::ElementId.class
+        raise "Element #{name} already has an ID. Cannot write #{attr}" if idWritten
+
+        io << " id=\""
+        io << attr
+        io << "\""
+
+        idWritten = true
+      in CSS::CSSClass.class
+        class_io << " " unless class_io.empty?
+        class_io << attr
+      in Template::TagAttrs
+        attr.each do |(k, v)|
+          io << " "
+          io << k
+          io << "=\""
+          io << v
+          io << "\""
+        end
+      end
     end
-    attrs.each do |(k, v)|
-      io << " "
-      io << k
-      io << "=\""
-      io << v
+    unless class_io.empty?
+      io << " class=\""
+      io << class_io.to_s
       io << "\""
     end
   end
 
-  @[AlwaysInline]
-  def start_tag(io, name, css_class, attrs)
-    tag_begin(io, name, css_class, attrs)
+  def start_tag(io, name, *attrs)
+    tag_begin(io, name, *attrs)
     io << ">"
   end
 
-  @[AlwaysInline]
   def end_tag(io : IO, name : String)
     io << "</"
     io << name

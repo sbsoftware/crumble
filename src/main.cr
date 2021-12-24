@@ -3,27 +3,111 @@ require "template/view"
 require "http/server"
 
 class MyClass < CSS::CSSClass
-  backgroundColor Silver
-  color Black
 end
 
 class MyOtherClass < CSS::CSSClass
-  backgroundColor({0xFFu8, 0xFFu8, 0xFFu8})
-  color Blue
 end
 
 class RedClass < CSS::CSSClass
-  backgroundColor Red
-  color White
 end
 
-class TopAppBar < CSS::CSSClass
+class MainClass < CSS::CSSClass
+end
+
+class ContentClass < CSS::CSSClass
+end
+
+class TopAppBar < CSS::ElementId
+end
+
+module TopAppBarStyle
+  macro included
+    rule TopAppBar do
+      display Flex
+      backgroundColor primary_color
+      color primary_font_color
+      boxShadow 3.px, 3.px, 5.px, -2.px, {0x88, 0x88, 0x88}
+    end
+
+    rule TopAppBar > any do
+      padding 16.px
+      margin 0
+      fontSize 24.px
+      fontWeight Normal
+    end
+  end
+end
+
+class DefaultStyle < CSS::Stylesheet
+  include TopAppBarStyle
+
+  rule html, body, MainClass do
+    width 100.percent
+    height 100.percent
+    padding 0
+    margin 0
+    fontFamily "Helvetica, sans-serif"
+  end
+
+  rule body do
+    display Flex
+  end
+
+  rule MainClass do
+    maxWidth 800.px
+  end
+
+  rule ContentClass do
+    padding 0, 1.em
+  end
+
+  rule ul do
+    backgroundColor Black
+    color({0xFF, 0xFF, 0xFF})
+    display Block
+  end
+
+  rule aside do
+    display InlineBlock
+  end
+
+  rule ul >> a do
+    color White
+  end
+
+  rule MyClass do
+    backgroundColor Silver
+    color Black
+  end
+
+  rule MyClass >> MyOtherClass do
+    backgroundColor({0xFF, 0xFF, 0xFF})
+    color Blue
+  end
+
+  rule RedClass do
+    backgroundColor Red
+    color White
+  end
+
+  rule MyClass >> MyOtherClass >> strong do
+    display None
+  end
+
+  rule MyClass >> ul >> li >> div >> strong >> a do
+    backgroundColor Blue
+  end
+
+  def self.primary_color
+    colorValue(White)
+  end
+
+  def self.primary_font_color
+    colorValue(Black)
+  end
 end
 
 class Menu < CSS::CSSClass
-end
-
-class Content < CSS::CSSClass
 end
 
 class MyData
@@ -47,7 +131,7 @@ class MyView(T) < View(T)
   template do
     div do
       div MyClass do
-        div theklass, {"data-controller" => "Something"} do
+        div theklass, TagAttrs.new({"data-controller" => "Something"}) do
           "This is:"
           strong { theprop }
         end
@@ -58,7 +142,7 @@ class MyView(T) < View(T)
         end
       end
     end
-    div attrs: {"lang" => "EN"} do
+    div(TagAttrs.new({"lang" => "EN"})) do
       div
       div RedClass do
         "Penis"
@@ -75,7 +159,7 @@ class MyLayout(T) < View(T)
         title do
           site_title
         end
-        link attrs: {"rel" => "stylesheet", "href" => "/style.css"}
+        link(TagAttrs.new({"rel" => "stylesheet", "href" => "/style.css"}))
       end
       body do
         site_body
@@ -96,7 +180,7 @@ class PageTemplate(T) < View(T)
     div TopAppBar do
       page_title
     end
-    div Content do
+    div ContentClass, MainClass do
       page_body
     end
   end
@@ -113,12 +197,12 @@ class MyMenu < Template
     nav Menu do
       ul do
         li do
-          a attrs: {"href" => "/" } do
+          a(TagAttrs.new({"href" => "/" })) do
             "Index"
           end
         end
         li do
-          a attrs: {"href" => "/home"} do
+          a(TagAttrs.new({"href" => "/home"})) do
             "Home"
           end
         end
@@ -161,9 +245,7 @@ end
 server = HTTP::Server.new do |ctx|
   if ctx.request.path.includes?("style.css")
     ctx.response.content_type = "text/css"
-    {% begin %}
-      ctx.response.print([{{ CSS::CSSClass.all_subclasses.splat }}].map(&.to_css).join("\n"))
-    {% end %}
+    ctx.response.print DefaultStyle
   elsif ctx.request.path == "/"
     ctx.response.content_type = "text/html"
     ctx.response.print SiteStructure.new("WORKING TITLE", PageStructure.new("Index", MyMenu.new, MyData.new("Welcome!").default_view).template).layout

@@ -1,11 +1,11 @@
 module CSS
-  abstract class CSSClass
+  abstract class ElementId
     def self.to_s(io : IO)
       io << self.name.dasherize
     end
 
     def self.selector
-      CSS::ClassSelector.new(self)
+      CSS::IdSelector.new(self)
     end
   end
 end
