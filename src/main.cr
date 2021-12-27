@@ -159,7 +159,7 @@ class MyLayout(T) < View(T)
         title do
           site_title
         end
-        link(TagAttrs.new({"rel" => "stylesheet", "href" => "/style.css"}))
+        style DefaultStyle
       end
       body do
         site_body
@@ -242,11 +242,39 @@ class HomeTemplate(T) < View(T)
   end
 end
 
-server = HTTP::Server.new do |ctx|
-  if ctx.request.path.includes?("style.css")
-    ctx.response.content_type = "text/css"
-    ctx.response.print DefaultStyle
-  elsif ctx.request.path == "/"
+class HTTP::Request
+  getter id : String = Random.new.hex(8)
+end
+
+class LogHandler
+  include HTTP::Handler
+
+  def call(ctx)
+    puts request_details(ctx.request) + " Started"
+    duration = Time.measure do
+      call_next(ctx)
+    end
+    puts request_details(ctx.request) + " Completed #{ctx.response.status_code} (#{duration.total_seconds.humanize(precision: 2)}s)"
+  end
+
+  private def request_details(req)
+    "{#{req.id}} [#{Time.local.to_s("%Y-%m-%d %H:%M:%S.%6N")}] #{req.remote_address} #{req.method} #{req.resource}"
+  end
+end
+
+server = HTTP::Server.new([LogHandler.new]) do |ctx|
+  req = ctx.request
+  res = ctx.response
+  {% begin %}
+    {% for style_class in CSS::Stylesheet.all_subclasses %}
+    if req.path == {{style_class}}.uri_path
+      res.content_type = "text/css"
+      res.print {{style_class}}
+      next
+    end
+    {% end %}
+  {% end %}
+  if ctx.request.path == "/"
     ctx.response.content_type = "text/html"
     ctx.response.print SiteStructure.new("WORKING TITLE", PageStructure.new("Index", MyMenu.new, MyData.new("Welcome!").default_view).template).layout
   elsif ctx.request.path == "/home"

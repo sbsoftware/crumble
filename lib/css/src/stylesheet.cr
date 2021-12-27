@@ -144,5 +144,9 @@ module CSS
     def self.padding_value(val1, val2, val3, val4)
       "#{val1} #{val2} #{val3} #{val4}"
     end
+
+    def self.uri_path
+      "/styles/#{self.name.underscore}.css"
+    end
   end
 end
