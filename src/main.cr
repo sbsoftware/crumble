@@ -283,6 +283,6 @@ server = HTTP::Server.new([LogHandler.new]) do |ctx|
   end
 end
 
-address = server.bind_tcp 8080
+address = server.bind_tcp "0.0.0.0", 8080
 puts "Listening on http://#{address}"
 server.listen
