@@ -152,43 +152,32 @@ class MyView(T) < View(T)
   end
 end
 
-class MyLayout(T) < View(T)
+class PageLayout < Template
+  getter page_title : String
+  getter page_menu : Template
+  getter page_body : Template | String
+
+  def initialize(@page_title, @page_menu, @page_body)
+  end
+
   template do
     html do
       head do
         title do
-          site_title
+          page_title
         end
         style DefaultStyle
       end
       body do
-        site_body
+        page_menu
+        div TopAppBar do
+          page_title
+        end
+        div ContentClass, MainClass do
+          page_body
+        end
       end
     end
-  end
-end
-
-record SiteStructure, site_title : String, site_body : Template do
-  def layout
-    MyLayout(self).new(self)
-  end
-end
-
-class PageTemplate(T) < View(T)
-  template do
-    page_menu
-    div TopAppBar do
-      page_title
-    end
-    div ContentClass, MainClass do
-      page_body
-    end
-  end
-end
-
-record PageStructure, page_title : String, page_menu : Template, page_body : Template | String do
-  def template
-    PageTemplate(self).new(self)
   end
 end
 
@@ -342,7 +331,7 @@ end
 
 class RootResource < Resource
   def index
-    render SiteStructure.new("Root", PageStructure.new("Index", MyMenu.new, MyData.new("Welcome!").default_view).template).layout
+    render PageLayout.new("Index", MyMenu.new, MyData.new("Welcome!").default_view)
   end
 
   def self.uri_path
@@ -354,14 +343,14 @@ class UserResource < Resource
   def index
     user = User.find(id)
 
-    render SiteStructure.new("Home", PageStructure.new("Home", MyMenu.new, HomeContent.new(user).template).template).layout
+    render PageLayout.new("Home", MyMenu.new, HomeContent.new(user).template)
   end
 end
 
 module SomeNamespace
   class SpecialResource < Resource
     def index
-      render SiteStructure.new("Special", PageStructure.new("Special", MyMenu.new, "APRIL FOOLS").template).layout
+      render PageLayout.new("Special", MyMenu.new, "APRIL FOOLS")
     end
   end
 end
