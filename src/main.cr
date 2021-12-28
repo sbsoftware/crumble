@@ -273,7 +273,6 @@ class Resource
   end
 
   def self.match(path)
-    puts "#{path} == #{uri_path} ?"
     uri_path_matcher.match(path)
   end
 
