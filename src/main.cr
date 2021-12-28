@@ -186,7 +186,7 @@ class PageTemplate(T) < View(T)
   end
 end
 
-record PageStructure, page_title : String, page_menu : Template, page_body : Template do
+record PageStructure, page_title : String, page_menu : Template, page_body : Template | String do
   def template
     PageTemplate(self).new(self)
   end
@@ -197,26 +197,32 @@ class MyMenu < Template
     nav Menu do
       ul do
         li do
-          a(TagAttrs.new({"href" => "/" })) do
-            "Index"
-          end
+          resource_link RootResource, "Index"
         end
         li do
-          a(TagAttrs.new({"href" => "/home"})) do
-            "Home"
-          end
+          resource_link User.find(32).user_resource_path, "Home"
+        end
+        li do
+          resource_link SomeNamespace::SpecialResource, "Special"
         end
       end
     end
   end
 end
 
-record User, name : String, posts : Array(Post)
-record Post, title : String, body : String
+record User, id : Int64, name : String, posts : Array(Post) do
+  def self.find(id)
+    post1 = Post.new("How to write a web framework in crystal", "tbd")
+    post2 = Post.new("5 Reasons Why This New App Will Stun You!", "Number 3 is a real bummer!")
 
-post1 = Post.new("How to write a web framework in crystal", "tbd")
-post2 = Post.new("5 Reasons Why This New App Will Stun You!", "Number 3 is a real bummer!")
-user1 = User.new("MoetiMoe", [post1, post2])
+    new(id.to_i64, "User#{id}", [post1, post2])
+  end
+
+  def user_resource_path
+    ResourcePath.new(UserResource, id)
+  end
+end
+record Post, title : String, body : String
 
 record HomeContent, user : User do
   def template
@@ -262,6 +268,104 @@ class LogHandler
   end
 end
 
+class Resource
+  @ctx : HTTP::Server::Context
+
+  def self.handle(ctx)
+    return false if match(ctx.request.path).nil?
+
+    instance = self.new(ctx)
+
+    case ctx.request.method
+    when "GET"
+      instance.index
+    end
+    return true
+  end
+
+  def self.match(path)
+    puts "#{path} == #{uri_path} ?"
+    uri_path_matcher.match(path)
+  end
+
+  def self.uri_path
+    "/" + self.name.chomp("Resource").gsub("::", "/").underscore
+  end
+
+  def self.uri_path(id)
+    "#{uri_path}/#{id}"
+  end
+
+  def self.uri_path_matcher
+    /#{uri_path}(\/|\/(\d+))?$/
+  end
+
+  def initialize(@ctx)
+  end
+
+  def render(tpl)
+    @ctx.response.print tpl
+  end
+
+  def index
+    @ctx.response.status_code = 404
+    @ctx.response.print "Not Found"
+  end
+
+  def id
+    self.class.match(@ctx.request.path).try { |m| m[2].to_i64 }.not_nil!
+  end
+end
+
+class ResourcePath
+  @resource_class : Resource.class
+  @id : Int64?
+
+  def initialize(@resource_class)
+  end
+
+  def initialize(@resource_class, @id)
+  end
+
+  def uri_path
+    to_s
+  end
+
+  def to_s(io : IO)
+    io << @resource_class.uri_path
+    if @id
+      io << "/"
+      io << @id
+    end
+  end
+end
+
+class RootResource < Resource
+  def index
+    render SiteStructure.new("Root", PageStructure.new("Index", MyMenu.new, MyData.new("Welcome!").default_view).template).layout
+  end
+
+  def self.uri_path
+    "/"
+  end
+end
+
+class UserResource < Resource
+  def index
+    user = User.find(id)
+
+    render SiteStructure.new("Home", PageStructure.new("Home", MyMenu.new, HomeContent.new(user).template).template).layout
+  end
+end
+
+module SomeNamespace
+  class SpecialResource < Resource
+    def index
+      render SiteStructure.new("Special", PageStructure.new("Special", MyMenu.new, "APRIL FOOLS").template).layout
+    end
+  end
+end
+
 server = HTTP::Server.new([LogHandler.new]) do |ctx|
   req = ctx.request
   res = ctx.response
@@ -274,13 +378,11 @@ server = HTTP::Server.new([LogHandler.new]) do |ctx|
     end
     {% end %}
   {% end %}
-  if ctx.request.path == "/"
-    ctx.response.content_type = "text/html"
-    ctx.response.print SiteStructure.new("WORKING TITLE", PageStructure.new("Index", MyMenu.new, MyData.new("Welcome!").default_view).template).layout
-  elsif ctx.request.path == "/home"
-    ctx.response.content_type = "text/html"
-    ctx.response.print SiteStructure.new("WORKING TITLE", PageStructure.new("Home", MyMenu.new, HomeContent.new(user1).template).template).layout
-  end
+  {% begin %}
+    [{{Resource.all_subclasses.splat}}].each do |resource_class|
+      break if resource_class.handle(ctx)
+    end
+  {% end %}
 end
 
 address = server.bind_tcp "0.0.0.0", 8080
