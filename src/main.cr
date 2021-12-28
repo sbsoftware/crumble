@@ -210,16 +210,19 @@ record User, id : Int64, name : String, posts : Array(Post) do
   def user_resource_path
     ResourcePath.new(UserResource, id)
   end
+
+  def default_view
+    DefaultUserView.new(self)
+  end
 end
 record Post, title : String, body : String
 
-record HomeContent, user : User do
-  def template
-    HomeTemplate(self).new(self)
-  end
-end
+class DefaultUserView < Template
+  getter user : User
 
-class HomeTemplate(T) < View(T)
+  def initialize(@user)
+  end
+
   template do
     div do
       user.name
@@ -342,7 +345,7 @@ class UserResource < Resource
   def index
     user = User.find(id)
 
-    render PageLayout.new("Home", MyMenu.new, HomeContent.new(user).template)
+    render PageLayout.new("Home", MyMenu.new, user.default_view)
   end
 end
 
