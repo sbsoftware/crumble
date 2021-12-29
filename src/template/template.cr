@@ -1,9 +1,8 @@
-require "css"
 require "./tag_attrs"
 
 class Template
-  CONTENT_TAG_NAMES = %w(html head title body nav ul li a div strong form aside)
-  STANDALONE_TAG_NAMES = %w(link)
+  CONTENT_TAG_NAMES = %w(html head title body nav ul li a div strong form aside main section header h1)
+  STANDALONE_TAG_NAMES = %w(link img)
 
   macro capture_elems(&blk)
     {% if blk %}

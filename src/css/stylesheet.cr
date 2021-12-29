@@ -1,5 +1,9 @@
+require "../template"
 require "./named_color"
 require "./font_weight"
+require "./text_decoration"
+require "./list_style"
+require "./justify_content"
 require "./hex_color"
 require "./display_value"
 require "./selector"
@@ -10,6 +14,7 @@ require "./nested_selector"
 require "./child_selector"
 require "./any_selector"
 require "./sum_selector"
+require "./pseudoclass_selector"
 
 module CSS
   abstract class Stylesheet
@@ -39,6 +44,8 @@ module CSS
           CSS::NestedSelector.new(make_selector({{sel.receiver}}), make_selector({{sel.args.first}}))
         {% elsif sel.receiver && sel.name.stringify == ">" %}
           CSS::ChildSelector.new(make_selector({{sel.receiver}}), make_selector({{sel.args.first}}))
+        {% elsif sel.receiver && sel.name.stringify == "<=" %}
+          CSS::PseudoclassSelector.new(make_selector({{sel.receiver}}), CSS::Pseudoclass::{{sel.args.first}})
         {% else %}
           {{pp sel.receiver}}
           {{pp sel.name}}
@@ -48,7 +55,7 @@ module CSS
       {% elsif sel.is_a?(Expressions) %}
         make_selector({{sel.expressions.last}})
       {% elsif sel.is_a?(TupleLiteral) %}
-        CSS::SumSelector.new([{{sel.map { |s| "make_selector(#{s})".id }.splat}}].as(Array(CSS::Selector)))
+        CSS::SumSelector.new([{{sel.map { |s| "make_selector(#{s}).as(CSS::Selector)".id }.splat}}].as(Array(CSS::Selector)))
       {% else %}
         {{pp sel.name}}
         {% raise "Unknown selector type: #{sel.stringify}" %}
@@ -59,8 +66,16 @@ module CSS
       prop("background-color", colorValue({{c}}))
     end
 
+    macro backgroundImage(asset_file)
+      prop("background-image", "url(#{{{asset_file}}.uri_path})")
+    end
+
     macro color(c)
       prop("color", colorValue({{c}}))
+    end
+
+    macro textDecoration(td)
+      prop("text-decoration", CSS::TextDecoration::{{td}})
     end
 
     macro display(dv)
@@ -101,6 +116,18 @@ module CSS
 
     macro boxShadow(offset_x, offset_y, blur_radius, spread_radius, color)
       prop("box-shadow", "#{{{offset_x}}} #{{{offset_y}}} #{{{blur_radius}}} #{{{spread_radius}}} #{colorValue({{color}})}")
+    end
+
+    macro listStyle(ls)
+      prop("list-style", CSS::ListStyle::{{ls}})
+    end
+
+    macro justifyContent(jc)
+      prop("justify-content", CSS::JustifyContent::{{jc}})
+    end
+
+    macro content(c)
+      prop("content", {{c.stringify}})
     end
 
     macro colorValue(c)

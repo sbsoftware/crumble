@@ -1,7 +1,4 @@
-require "css"
-require "template/view"
-require "resource"
-require "http/server"
+require "./server"
 
 class MyClass < CSS::CSSClass
 end
@@ -122,13 +119,20 @@ class MyData
   end
 
   def default_view
-    MyView(self).new(self)
+    MyView.new(self)
   end
 end
 
 record MyOtherData, theprop : String, theklass : String
 
-class MyView(T) < View(T)
+class MyView < Template
+  getter my_data : MyData
+
+  forward_missing_to my_data
+
+  def initialize(@my_data)
+  end
+
   template do
     div do
       div MyClass do
@@ -241,26 +245,6 @@ class DefaultUserView < Template
   end
 end
 
-class HTTP::Request
-  getter id : String = Random.new.hex(8)
-end
-
-class LogHandler
-  include HTTP::Handler
-
-  def call(ctx)
-    puts request_details(ctx.request) + " Started"
-    duration = Time.measure do
-      call_next(ctx)
-    end
-    puts request_details(ctx.request) + " Completed #{ctx.response.status_code} (#{duration.total_seconds.humanize(precision: 2)}s)"
-  end
-
-  private def request_details(req)
-    "{#{req.id}} [#{Time.local.to_s("%Y-%m-%d %H:%M:%S.%6N")}] #{req.remote_address} #{req.method} #{req.resource}"
-  end
-end
-
 class RootResource < Resource
   def index
     render PageLayout.new("Index", MyMenu.new, MyData.new("Welcome!").default_view)
@@ -287,25 +271,4 @@ module SomeNamespace
   end
 end
 
-server = HTTP::Server.new([LogHandler.new]) do |ctx|
-  req = ctx.request
-  res = ctx.response
-  {% begin %}
-    {% for style_class in CSS::Stylesheet.all_subclasses %}
-    if req.path == {{style_class}}.uri_path
-      res.content_type = "text/css"
-      res.print {{style_class}}
-      next
-    end
-    {% end %}
-  {% end %}
-  {% begin %}
-    [{{Resource.all_subclasses.splat}}].each do |resource_class|
-      break if resource_class.handle(ctx)
-    end
-  {% end %}
-end
-
-address = server.bind_tcp "0.0.0.0", 8080
-puts "Listening on http://#{address}"
-server.listen
+Incredible::Server.start
