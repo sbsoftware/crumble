@@ -1,21 +1,11 @@
 require "../css"
 require "../resource"
+require "../asset_file"
 require "./log_handler"
 require "http/server"
 
 class HTTP::Request
   getter id : String = Random.new.hex(8)
-end
-
-abstract class AssetFile
-  def self.handle(ctx)
-    if ctx.request.path == self.uri_path
-      ctx.response.content_type = self.mime_type
-      ctx.response.print self
-      return true
-    end
-    return false
-  end
 end
 
 module Incredible
@@ -26,11 +16,9 @@ module Incredible
       server = HTTP::Server.new([LogHandler.new]) do |ctx|
         req = ctx.request
         res = ctx.response
-        {% begin %}
-          ([{{AssetFile.all_subclasses.splat}}] of AssetFile.class).each do |asset_file|
-            break if asset_file.handle(ctx)
-          end
-        {% end %}
+
+        next if AssetFile.handle(ctx)
+
         {% begin %}
           {% for style_class in CSS::Stylesheet.all_subclasses %}
           if req.path == {{style_class}}.uri_path
