@@ -20,14 +20,51 @@ module CSS
   abstract class Stylesheet
     @@rules = {} of CSS::Selector => String
 
-    macro rule(selector, &blk)
-      @@rules[make_selector({{selector}})] = String.build do |__rulesio__|
-        {{blk.body}}
+    macro rules(&blk)
+      def self.to_s(__rulesio__ : IO)
+        capture_rules {{blk}}
       end
     end
 
-    macro rule(*selector, &blk)
-      rule({{selector}}) {{blk}}
+    macro capture_rules(level = 0, &blk)
+      {% if blk.body.is_a?(Expressions) %}
+        {% for exp in blk.body.expressions %}
+          capture_rule({{level}}) do
+            {{exp}}
+          end
+        {% end %}
+      {% else %}
+        capture_rule({{level}}) {{blk}}
+      {% end %}
+    end
+
+    macro capture_rule(level = 0, &blk)
+      {% if blk.body.name.stringify == "media" && level == 0 %}
+        __rulesio__ << "@media ("
+        {% for arg in blk.body.args %}
+          __rulesio__ << {{arg}}
+        {% end %}
+        __rulesio__ << ") {\n"
+        capture_rules({{level + 1}}) {{blk.body.block}}
+        __rulesio__ << "}\n"
+      {% else %}
+        __rulesio__ << " " * {{level}} * 2
+        __rulesio__ << make_selector({{blk.body.args.splat}})
+        __rulesio__ << " {\n"
+        {% if blk.body.block.body.is_a?(Expressions) %}
+          {% for exp in blk.body.block.body.expressions %}
+            __rulesio__ << " " * {{(level + 1) * 2}}
+            __rulesio__ << {{exp}}
+            __rulesio__ << ";\n"
+          {% end %}
+        {% else %}
+          __rulesio__ << " " * {{(level + 1) * 2}}
+          __rulesio__ << {{blk.body.block.body}}
+          __rulesio__ << ";\n"
+        {% end %}
+        __rulesio__ << " " * {{level}} * 2
+        __rulesio__ << "}\n"
+      {% end %}
     end
 
     macro make_selector(sel)
@@ -60,6 +97,10 @@ module CSS
         {{pp sel.name}}
         {% raise "Unknown selector type: #{sel.stringify}" %}
       {% end %}
+    end
+
+    macro make_selector(*sels)
+      make_selector({{sels}})
     end
 
     macro backgroundColor(c)
@@ -141,19 +182,7 @@ module CSS
     end
 
     macro prop(name, value)
-      __rulesio__ << {{name}}
-      __rulesio__ << ": "
-      __rulesio__ << {{value}}
-      __rulesio__ << ";\n"
-    end
-
-    def self.to_s(io : IO)
-      @@rules.each do |(sel, rules)|
-        io << sel
-        io << " {\n"
-        io << rules
-        io << "}\n"
-      end
+      "{{name.id}}: #{{{value}}}"
     end
 
     def self.padding_value(val)

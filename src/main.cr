@@ -37,63 +37,69 @@ module TopAppBarStyle
 end
 
 class DefaultStyle < CSS::Stylesheet
-  include TopAppBarStyle
+  rules do
+    rule html, body, MainClass do
+      width 100.percent
+      height 100.percent
+      padding 0
+      margin 0
+      fontFamily "Helvetica, sans-serif"
+    end
 
-  rule html, body, MainClass do
-    width 100.percent
-    height 100.percent
-    padding 0
-    margin 0
-    fontFamily "Helvetica, sans-serif"
-  end
+    rule body do
+      display Flex
+    end
 
-  rule body do
-    display Flex
-  end
+    rule MainClass do
+      maxWidth 800.px
+    end
 
-  rule MainClass do
-    maxWidth 800.px
-  end
+    rule ContentClass do
+      padding 0, 1.em
+    end
 
-  rule ContentClass do
-    padding 0, 1.em
-  end
+    rule ul do
+      backgroundColor Black
+      color({0xFF, 0xFF, 0xFF})
+      display Block
+    end
 
-  rule ul do
-    backgroundColor Black
-    color({0xFF, 0xFF, 0xFF})
-    display Block
-  end
+    rule aside do
+      display InlineBlock
+    end
 
-  rule aside do
-    display InlineBlock
-  end
+    rule ul >> a do
+      color White
+    end
 
-  rule ul >> a do
-    color White
-  end
+    rule MyClass do
+      backgroundColor Silver
+      color Black
+    end
 
-  rule MyClass do
-    backgroundColor Silver
-    color Black
-  end
+    rule MyClass >> MyOtherClass do
+      backgroundColor({0xFF, 0xFF, 0xFF})
+      color Blue
+    end
 
-  rule MyClass >> MyOtherClass do
-    backgroundColor({0xFF, 0xFF, 0xFF})
-    color Blue
-  end
+    rule RedClass do
+      backgroundColor Red
+      color White
+    end
 
-  rule RedClass do
-    backgroundColor Red
-    color White
-  end
+    rule MyClass >> MyOtherClass >> strong do
+      display None
+    end
 
-  rule MyClass >> MyOtherClass >> strong do
-    display None
-  end
+    rule MyClass >> ul >> li >> div >> strong >> a do
+      backgroundColor Blue
+    end
 
-  rule MyClass >> ul >> li >> div >> strong >> a do
-    backgroundColor Blue
+    media(maxWidth 50.rem) do
+      rule MyClass do
+        display None
+      end
+    end
   end
 
   def self.primary_color
