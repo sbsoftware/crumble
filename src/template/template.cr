@@ -1,7 +1,7 @@
 require "./tag_attrs"
 
 class Template
-  CONTENT_TAG_NAMES = %w(html head title body nav ul li a div strong form aside main section header h1)
+  CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div strong form aside main section header h1)
   STANDALONE_TAG_NAMES = %w(link img)
 
   macro capture_elems(&blk)
@@ -45,6 +45,11 @@ class Template
       {% end %}
     {% elsif blk.body.is_a?(StringLiteral) %}
       __tplio__ << {{blk.body + "\n"}}
+    {% elsif blk.body.is_a?(StringInterpolation) %}
+      __tplio__ << {{blk.body}}
+      __tplio__ << "\n"
+    {% elsif blk.body.is_a?(Path) %}
+      __tplio__ << {{blk.body}}
     {% else %}
       {{pp "Unknown node"}}
       {{pp blk.body}}

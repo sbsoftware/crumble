@@ -1,6 +1,7 @@
 require "../css"
 require "../resource"
 require "../asset_file"
+require "../stimulus_controller"
 require "./log_handler"
 require "http/server"
 

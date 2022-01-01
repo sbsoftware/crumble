@@ -163,6 +163,18 @@ class MyView < Template
   end
 end
 
+StimulusJS = JavascriptFile.register "assets/stimulus.js"
+
+class HelloController < StimulusController
+  controller do
+    targets name, age
+
+    connect do
+      console.log("Stimulus Test")
+    end
+  end
+end
+
 class PageLayout < Template
   getter page_title : String
   getter page_menu : Template
@@ -178,6 +190,13 @@ class PageLayout < Template
           page_title
         end
         style DefaultStyle
+        script TagAttrs.new({"type" => "module"}) do
+          <<-SCRIPT
+          import { Application, Controller } from "#{StimulusJS.uri_path}"
+          window.Stimulus = Application.start();
+          SCRIPT
+          HelloController
+        end
       end
       body do
         page_menu
