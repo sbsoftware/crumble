@@ -166,12 +166,11 @@ end
 StimulusJS = JavascriptFile.register "assets/stimulus.js"
 
 class HelloController < StimulusController
-  controller do
-    targets name, age
+  targets "name", age
 
-    connect do
-      console.log("Stimulus Test")
-    end
+  method "greet" do
+    console.log("Stimulus Test")
+    console.log(this.nameTarget.innerHTML)
   end
 end
 
@@ -259,9 +258,11 @@ class DefaultUserView < Template
     end
     ul do
       user.posts.each do |post|
-        li do
-          div do
-            strong { post.title }
+        li TagAttrs.new({"data-controller" => HelloController.controller_name}) do
+          div TagAttrs.new({"data-action" => "click->hello#greet"}) do
+            strong TagAttrs.new({"data-hello-target" => "name"}) do
+              post.title
+            end
           end
           div { post.body }
         end
