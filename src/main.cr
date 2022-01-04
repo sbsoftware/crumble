@@ -1,4 +1,5 @@
 require "./server"
+require "./stimulus_controllers/*"
 
 class MyClass < CSS::CSSClass
 end
@@ -163,16 +164,7 @@ class MyView < Template
   end
 end
 
-StimulusJS = JavascriptFile.register "assets/stimulus.js"
-
-class HelloController < StimulusController
-  targets "name", age
-
-  method "greet" do
-    console.log("Stimulus Test")
-    console.log(this.nameTarget.innerHTML)
-  end
-end
+StimulusInclude = {{ run("./stimulus_include").stringify }}
 
 class PageLayout < Template
   getter page_title : String
@@ -189,13 +181,7 @@ class PageLayout < Template
           page_title
         end
         style DefaultStyle
-        script TagAttrs.new({"type" => "module"}) do
-          <<-SCRIPT
-          import { Application, Controller } from "#{StimulusJS.uri_path}"
-          window.Stimulus = Application.start();
-          SCRIPT
-          HelloController
-        end
+        stimulus_include StimulusInclude
       end
       body do
         page_menu
@@ -258,9 +244,9 @@ class DefaultUserView < Template
     end
     ul do
       user.posts.each do |post|
-        li TagAttrs.new({"data-controller" => HelloController.controller_name}) do
-          div TagAttrs.new({"data-action" => "click->hello#greet"}) do
-            strong TagAttrs.new({"data-hello-target" => "name"}) do
+        li HelloController do
+          div TagAttrs.new({"data-action" => "click->hello#greet test-event@window->hello#saySomething"}) do
+            strong HelloController.name_target do
               post.title
             end
           end
@@ -297,4 +283,4 @@ module SomeNamespace
   end
 end
 
-Incredible::Server.start
+Crrumble::Server.start

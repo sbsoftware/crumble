@@ -1,7 +1,7 @@
 require "../css"
 require "../resource"
 require "../asset_file"
-require "../stimulus_controller"
+require "../stimulus/stimulus_controller"
 require "./log_handler"
 require "http/server"
 
@@ -9,7 +9,7 @@ class HTTP::Request
   getter id : String = Random.new.hex(8)
 end
 
-module Incredible
+module Crrumble
   module Server
     extend self
 
@@ -30,10 +30,13 @@ module Incredible
           {% end %}
         {% end %}
         {% begin %}
-          ([{{Resource.all_subclasses.splat}}] of Resource.class).each do |resource_class|
-            break if resource_class.handle(ctx)
-          end
+          {% for resource_class in Resource.all_subclasses %}
+            next if {{resource_class}}.handle(ctx)
+          {% end %}
         {% end %}
+
+        res.print "Not Found"
+        res.status_code = 404
       end
 
       address = server.bind_tcp "0.0.0.0", 8080

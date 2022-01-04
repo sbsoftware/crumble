@@ -10,7 +10,7 @@ class AssetFile
   end
 
   macro register(path)
-    {{@type}}.new("/{{path.id}}", {{read_file(path)}})
+    {{@type}}.new("/{{path.id}}", {{read_file?(path) ? read_file(path) : read_file("lib/crrumble/#{path.id}")}})
   end
 
   def self.handle(ctx)

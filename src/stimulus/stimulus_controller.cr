@@ -1,4 +1,23 @@
-record Target, name : String
+require "../asset_file"
+require "../template"
+
+JavascriptFile.register "assets/stimulus.js"
+
+abstract class JavascriptEvent
+  def self.to_s(io : IO)
+    io << name.dasherize
+  end
+end
+
+record Target, controller : StimulusController.class, name : String do
+  def to_attr(io : IO)
+    io << " data-"
+    io << controller.controller_name
+    io << "-target=\""
+    io << name
+    io << "\""
+  end
+end
 
 class Targets
   @arr = [] of Target
@@ -45,25 +64,52 @@ abstract class CallContext
   end
 
   def resolve_call(name, *args)
-    "#{@receiver}.#{name}(#{args.join(", ")})"
+    "#{receiver_dot(name)}(#{args.join(", ")})"
   end
 
   def resolve_attr(name)
-    "#{@receiver}.#{name}"
+    receiver_dot(name)
   end
 
-  def forward(ctx_class, receiver)
-    ctx_class.new(@receiver.blank? ? receiver : "#{@receiver}.#{receiver}")
+  def forward(ctx_class, next_receiver)
+    ctx_class.new(receiver_dot(next_receiver))
+  end
+
+  def to_s(io : IO)
+    io << @receiver
+  end
+
+  def inspect(io : IO)
+    io << @receiver
+  end
+
+  def receiver_dot(call)
+    @receiver.blank? ? call : "#{@receiver}.#{call}"
+  end
+end
+
+# exists to write JS null from within a crystal hash
+class NullContext
+  def self.inspect(io : IO)
+    io << "null"
   end
 end
 
 class MethodContext < CallContext
+  def window
+    forward(ElementContext, "window")
+  end
+
   def console
     forward(ConsoleContext, "console")
   end
 
   def this
     forward(self.class, "this")
+  end
+
+  def dispatch(event : JavascriptEvent.class, target : ElementContext)
+    resolve_call("dispatch", event.to_s.dump, {target: target, prefix: NullContext})
   end
 end
 
@@ -82,6 +128,16 @@ class ElementContext < CallContext
 
   def innerHTML
     resolve_attr("innerHTML")
+  end
+
+  def classList
+    forward(ClassListContext, "classList")
+  end
+end
+
+class ClassListContext < CallContext
+  def toggle(klass : CSS::CSSClass.class)
+    resolve_call("toggle", klass.to_s.dump)
   end
 end
 
@@ -108,7 +164,11 @@ abstract class StimulusController
     {% else %}
       codeio << "  " * {{level + 1}}
       {% if blk.body.is_a?(Call) %}
-        codeio << {{call_context}}.new.{{blk.body.receiver.id}}.{{blk.body.name}}({{blk.body.args.map { |a| a.is_a?(Call) ? "#{call_context}.new.#{a}".id : a.stringify }.splat }})
+        {% if blk.body.receiver %}
+          codeio << {{call_context}}.new.{{blk.body.receiver.id}}.{{blk.body.name}}({{blk.body.args.map { |a| a.is_a?(Call) ? "#{call_context}.new.#{a}".id : (a.is_a?(StringLiteral) ? a.stringify : a) }.splat }})
+        {% else %}
+          codeio << {{call_context}}.new.{{blk.body.name}}({{blk.body.args.map { |a| a.is_a?(Call) ? "#{call_context}.new.#{a}".id : (a.is_a?(StringLiteral) ? a.stringify : a) }.splat }})
+        {% end %}
       {% else %}
         {{ raise "Unknown node: #{blk.body}" }}
       {% end %}
@@ -118,19 +178,19 @@ abstract class StimulusController
 
   macro targets(*targets)
     {% for target_name in targets %}
-      @@targets << Target.new("{{target_name.id}}")
-
-      def {{target_name.id}}Target
-        # TODO: Something that can be fed to tag macro calls
+      def self.{{target_name.id}}_target
+        Target.new(self, "{{target_name.id}}")
       end
+
+      @@targets << {{target_name.id}}_target
     {% end %}
   end
 
   macro method(name, &blk)
     private class {{name.capitalize.id}}MethodContext < MethodContext
-      {% for target_def in @type.methods.select { |m| m.name.ends_with?("Target") } %}
-        def {{target_def.name.id}}
-          forward(ElementContext, {{target_def.name.stringify}})
+      {% for target_def in @type.class.methods.select { |m| m.name.ends_with?("_target") } %}
+        def {{target_def.name.camelcase(lower: true).id}}
+          forward(ElementContext, {{target_def.name.camelcase(lower: true).stringify}})
         end
       {% end %}
     end
@@ -145,5 +205,15 @@ abstract class StimulusController
 
   def self.controller_name
     self.name.chomp("Controller").gsub("::", "--").dasherize
+  end
+end
+
+class Template
+  macro stimulus_include(code)
+    capture_elems do
+      script TagAttrs.new({"type" => "module"}) do
+        {{code}}
+      end
+    end
   end
 end

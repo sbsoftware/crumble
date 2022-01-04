@@ -20,7 +20,7 @@ class Template
 
   macro eval_exp(&blk)
     {% if blk.body.is_a?(Call) %}
-      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(style resource_link)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
+      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(style resource_link stimulus_include)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
         {% if blk.body.block %}
           {% if blk.body.named_args && blk.args.size > 0 %}
             {{blk.body.name}}({{blk.body.args.splat}}, {{blk.body.named_args.splat}}) do
@@ -48,11 +48,12 @@ class Template
     {% elsif blk.body.is_a?(StringInterpolation) %}
       __tplio__ << {{blk.body}}
       __tplio__ << "\n"
-    {% elsif blk.body.is_a?(Path) %}
+    {% elsif blk.body.is_a?(Path) || blk.body.is_a?(MacroExpression) %}
       __tplio__ << {{blk.body}}
     {% else %}
       {{pp "Unknown node"}}
       {{pp blk.body}}
+      {{pp blk.body.name}}
     {% end %}
   end
 
@@ -112,11 +113,12 @@ class Template
     io << name
   end
 
-  def tag_begin(io : IO, name : String, *attrs : (CSS::ElementId.class | CSS::CSSClass.class | Template::TagAttrs))
+  def tag_begin(io : IO, name : String, *attrs)
     io << "<"
     io << name
 
     class_io = String::Builder.new
+    controller_io = String::Builder.new
     idWritten = false
 
     attrs.each do |attr|
@@ -132,6 +134,11 @@ class Template
       in CSS::CSSClass.class
         class_io << " " unless class_io.empty?
         class_io << attr
+      in StimulusController.class
+        controller_io << " " unless controller_io.empty?
+        controller_io << attr.controller_name
+      in Target
+        attr.to_attr(io)
       in Template::TagAttrs
         attr.each do |(k, v)|
           io << " "
@@ -145,6 +152,11 @@ class Template
     unless class_io.empty?
       io << " class=\""
       io << class_io.to_s
+      io << "\""
+    end
+    unless controller_io.empty?
+      io << " data-controller=\""
+      io << controller_io.to_s
       io << "\""
     end
   end

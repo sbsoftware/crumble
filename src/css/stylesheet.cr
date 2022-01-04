@@ -6,12 +6,14 @@ require "./list_style"
 require "./justify_content"
 require "./hex_color"
 require "./display_value"
+require "./position"
 require "./selector"
 require "./tag_selector"
 require "./id_selector"
 require "./class_selector"
 require "./nested_selector"
 require "./child_selector"
+require "./combined_selector"
 require "./any_selector"
 require "./sum_selector"
 require "./pseudoclass_selector"
@@ -81,6 +83,8 @@ module CSS
           CSS::NestedSelector.new(make_selector({{sel.receiver}}), make_selector({{sel.args.first}}))
         {% elsif sel.receiver && sel.name.stringify == ">" %}
           CSS::ChildSelector.new(make_selector({{sel.receiver}}), make_selector({{sel.args.first}}))
+        {% elsif sel.receiver && sel.name.stringify == "&" %}
+          CSS::CombinedSelector.new(make_selector({{sel.receiver}}), make_selector({{sel.args.first}}))
         {% elsif sel.receiver && sel.name.stringify == "<=" %}
           CSS::PseudoclassSelector.new(make_selector({{sel.receiver}}), CSS::Pseudoclass::{{sel.args.first}})
         {% else %}
@@ -121,6 +125,18 @@ module CSS
 
     macro display(dv)
       prop("display", CSS::DisplayValue::{{dv}})
+    end
+
+    macro position(pos)
+      prop("position", CSS::Position::{{pos}})
+    end
+
+    macro top(t)
+      prop("top", {{t}})
+    end
+
+    macro left(l)
+      prop("left", {{l}})
     end
 
     macro width(w)
