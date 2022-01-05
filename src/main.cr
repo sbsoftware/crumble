@@ -283,4 +283,4 @@ module SomeNamespace
   end
 end
 
-Crrumble::Server.start
+Crumble::Server.start

@@ -9,7 +9,7 @@ class HTTP::Request
   getter id : String = Random.new.hex(8)
 end
 
-module Crrumble
+module Crumble
   module Server
     extend self
 
