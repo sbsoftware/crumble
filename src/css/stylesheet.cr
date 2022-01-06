@@ -194,6 +194,10 @@ module CSS
       prop("flex-grow", {{fg}})
     end
 
+    macro flexWrap(fw)
+      prop("flex-wrap", CSS::FlexWrap::{{fw}})
+    end
+
     macro justifyContent(jc)
       prop("justify-content", CSS::JustifyContent::{{jc}})
     end
