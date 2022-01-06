@@ -1,22 +1,5 @@
 require "../template"
-require "./named_color"
-require "./font_weight"
-require "./text_decoration"
-require "./list_style"
-require "./justify_content"
-require "./hex_color"
-require "./display_value"
-require "./position"
-require "./selector"
-require "./tag_selector"
-require "./id_selector"
-require "./class_selector"
-require "./nested_selector"
-require "./child_selector"
-require "./combined_selector"
-require "./any_selector"
-require "./sum_selector"
-require "./pseudoclass_selector"
+require "./*"
 
 module CSS
   abstract class Stylesheet
@@ -131,6 +114,10 @@ module CSS
       prop("position", CSS::Position::{{pos}})
     end
 
+    macro zIndex(zi)
+      prop("z-index", {{zi}})
+    end
+
     macro top(t)
       prop("top", {{t}})
     end
@@ -143,8 +130,16 @@ module CSS
       prop("width", {{w}})
     end
 
+    macro minWidth(mw)
+      prop("min-width", {{mw}})
+    end
+
     macro height(h)
       prop("height", {{h}})
+    end
+
+    macro minHeight(mh)
+      prop("min-height", {{mh}})
     end
 
     macro padding(*p)
@@ -153,6 +148,14 @@ module CSS
 
     macro margin(m)
       prop("margin", {{m}})
+    end
+
+    macro border(*b)
+      prop("border", border_value({{b.splat}}))
+    end
+
+    macro borderTop(*bt)
+      prop("border-top", border_value({{bt.splat}}))
     end
 
     macro fontFamily(ff)
@@ -179,6 +182,18 @@ module CSS
       prop("list-style", CSS::ListStyle::{{ls}})
     end
 
+    macro alignItems(ai)
+      prop("align-items", CSS::AlignItems::{{ai}})
+    end
+
+    macro flexDirection(fd)
+      prop("flex-direction", CSS::FlexDirection::{{fd}})
+    end
+
+    macro flexGrow(fg)
+      prop("flex-grow", {{fg}})
+    end
+
     macro justifyContent(jc)
       prop("justify-content", CSS::JustifyContent::{{jc}})
     end
@@ -195,6 +210,10 @@ module CSS
       {% else %}
         {{c}}
       {% end %}
+    end
+
+    macro border_value(size, style, color)
+      "#{{{size}}} #{CSS::BorderStyle::{{style}}} #{colorValue({{color}})}"
     end
 
     macro prop(name, value)

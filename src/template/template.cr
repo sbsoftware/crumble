@@ -1,8 +1,8 @@
 require "./tag_attrs"
 
 class Template
-  CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div strong form aside main section header h1)
-  STANDALONE_TAG_NAMES = %w(link img)
+  CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong form aside main section header h1 h2 h3 h4 h5 h6)
+  STANDALONE_TAG_NAMES = %w(link img br)
 
   macro capture_elems(&blk)
     {% if blk %}
