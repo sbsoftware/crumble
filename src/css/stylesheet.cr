@@ -211,6 +211,8 @@ module CSS
         CSS::NamedColor::{{c}}
       {% elsif c.is_a?(TupleLiteral) %}
         HexColor.new({{c}})
+      {% elsif c.is_a?(NumberLiteral) %}
+        HexColor.new({ {{c}}, {{c}}, {{c}} })
       {% else %}
         {{c}}
       {% end %}
