@@ -1,7 +1,7 @@
 require "../asset_file"
 require "../template"
 
-JavascriptFile.register "assets/stimulus.js"
+JavascriptFile.register "assets/stimulus.js", "#{__DIR__}/../../assets/stimulus.js"
 
 abstract class JavascriptEvent
   def self.to_s(io : IO)
