@@ -1,4 +1,4 @@
-require "./tag_attrs"
+require "./*"
 
 class Template
   CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong i form aside main section header h1 h2 h3 h4 h5 h6 table thead tbody tr td)
@@ -79,12 +79,16 @@ class Template
     end
   {% end %}
 
+  macro href(value)
+    Href.new({{value}})
+  end
+
   macro style(style_class)
-    link(TagAttrs.new({"rel" => "stylesheet", "href" => {{style_class}}.uri_path}))
+    link(Rel::Stylesheet, href({{style_class}}.uri_path))
   end
 
   macro resource_link(res, caption)
-    a(TagAttrs.new({"href" => {{res}}.uri_path})) do
+    a(href({{res}}.uri_path)) do
       capture_elems do
         {{caption}}
       end
@@ -113,50 +117,33 @@ class Template
     io << name
   end
 
-  def tag_begin(io : IO, name : String, *attrs)
+  def tag_begin(io : IO, name : String, arg)
+    io << "<"
+    io << name
+    io << " "
+    io << arg.html_attr_key
+    io << "=\""
+    arg.html_attr_value(io)
+    io << "\""
+  end
+
+  def tag_begin(io : IO, name : String, *args)
     io << "<"
     io << name
 
-    class_io = String::Builder.new
-    controller_io = String::Builder.new
-    idWritten = false
-
-    attrs.each do |attr|
-      case attr
-      in CSS::ElementId.class
-        raise "Element #{name} already has an ID. Cannot write #{attr}" if idWritten
-
-        io << " id=\""
-        io << attr
-        io << "\""
-
-        idWritten = true
-      in CSS::CSSClass.class
-        class_io << " " unless class_io.empty?
-        class_io << attr
-      in StimulusController.class
-        controller_io << " " unless controller_io.empty?
-        controller_io << attr.controller_name
-      in Target
-        attr.to_attr(io)
-      in Template::TagAttrs
-        attr.each do |(k, v)|
-          io << " "
-          io << k
-          io << "=\""
-          io << v
-          io << "\""
-        end
-      end
+    io_hash = Hash(String, String::Builder).new do |hash, key|
+      hash[key] = String::Builder.new
     end
-    unless class_io.empty?
-      io << " class=\""
-      io << class_io.to_s
-      io << "\""
-    end
-    unless controller_io.empty?
-      io << " data-controller=\""
-      io << controller_io.to_s
+    args.reduce(io_hash) do |attrs, arg|
+      attr_io = attrs[arg.html_attr_key]
+      attr_io << " " unless attr_io.empty?
+      arg.html_attr_value(attr_io)
+      attrs
+    end.each do |k, v|
+      io << " "
+      io << k
+      io << "=\""
+      io << v.to_s
       io << "\""
     end
   end

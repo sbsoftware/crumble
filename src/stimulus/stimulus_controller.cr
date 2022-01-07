@@ -10,12 +10,12 @@ abstract class JavascriptEvent
 end
 
 record Target, controller : StimulusController.class, name : String do
-  def to_attr(io : IO)
-    io << " data-"
-    io << controller.controller_name
-    io << "-target=\""
+  def html_attr_key
+    "data-#{controller.controller_name}-target"
+  end
+
+  def html_attr_value(io)
     io << name
-    io << "\""
   end
 end
 
@@ -213,12 +213,20 @@ abstract class StimulusController
   def self.controller_name
     self.name.chomp("Controller").gsub("::", "--").dasherize
   end
+
+  def self.html_attr_key
+    "data-controller"
+  end
+
+  def self.html_attr_value(io)
+    io << self.controller_name
+  end
 end
 
 class Template
   macro stimulus_include(code)
     capture_elems do
-      script TagAttrs.new({"type" => "module"}) do
+      script TagAttr.new("type", "module") do
         {{code}}
       end
     end

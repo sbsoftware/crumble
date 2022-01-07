@@ -7,5 +7,13 @@ module CSS
     def self.selector
       CSS::ClassSelector.new(self)
     end
+
+    def self.html_attr_key
+      "class"
+    end
+
+    def self.html_attr_value(io)
+      io << self
+    end
   end
 end

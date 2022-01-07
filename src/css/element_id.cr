@@ -7,5 +7,13 @@ module CSS
     def self.selector
       CSS::IdSelector.new(self)
     end
+
+    def self.html_attr_key
+      "id"
+    end
+
+    def self.html_attr_value(io)
+      io << self
+    end
   end
 end

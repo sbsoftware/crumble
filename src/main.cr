@@ -143,7 +143,7 @@ class MyView < Template
   template do
     div do
       div MyClass do
-        div theklass, TagAttrs.new({"data-controller" => "Something"}) do
+        div theklass, TagAttr.new("data-controller", "Something") do
           "This is:"
           strong { theprop }
         end
@@ -154,7 +154,7 @@ class MyView < Template
         end
       end
     end
-    div(TagAttrs.new({"lang" => "EN"})) do
+    div(TagAttr.new("lang", "EN")) do
       div
       div RedClass do
         "Penis"
@@ -245,7 +245,7 @@ class DefaultUserView < Template
     ul do
       user.posts.each do |post|
         li HelloController do
-          div TagAttrs.new({"data-action" => "click->hello#greet test-event@window->hello#saySomething"}) do
+          div TagAttr.new("data-action", "click->hello#greet test-event@window->hello#saySomething") do
             strong HelloController.name_target do
               post.title
             end
