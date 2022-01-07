@@ -4,7 +4,7 @@ class TestEvent < JavascriptEvent
 end
 
 class HelloController < StimulusController
-  targets "name", age
+  targets "name", :age
 
   method "greet" do
     console.log("Stimulus Test")

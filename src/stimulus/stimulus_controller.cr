@@ -103,11 +103,9 @@ class MethodContext < CallContext
   def console
     forward(ConsoleContext, "console")
   end
+end
 
-  def this
-    forward(self.class, "this")
-  end
-
+class ControllerContext < CallContext
   def dispatch(event : JavascriptEvent.class, target : ElementContext)
     resolve_call("dispatch", event.to_s.dump, {target: target, prefix: NullContext})
   end
@@ -176,10 +174,27 @@ abstract class StimulusController
     {% end %}
   end
 
+  macro inherited
+    private class {{@type.name.id}}ControllerContext < ControllerContext
+    end
+
+    private class {{@type.name.id}}ControllerMethodContext < MethodContext
+      def this
+        forward({{@type.name.id}}ControllerContext, "this")
+      end
+    end
+  end
+
   macro targets(*targets)
     {% for target_name in targets %}
       def self.{{target_name.id}}_target
         Target.new(self, "{{target_name.id}}")
+      end
+
+      private class {{@type.name.id}}ControllerContext
+        def {{target_name.camelcase(lower: true).id}}Target
+          forward(ElementContext, "{{target_name.camelcase(lower: true).id}}Target")
+        end
       end
 
       @@targets << {{target_name.id}}_target
@@ -187,18 +202,10 @@ abstract class StimulusController
   end
 
   macro method(name, &blk)
-    private class {{name.capitalize.id}}MethodContext < MethodContext
-      {% for target_def in @type.class.methods.select { |m| m.name.ends_with?("_target") } %}
-        def {{target_def.name.camelcase(lower: true).id}}
-          forward(ElementContext, {{target_def.name.camelcase(lower: true).stringify}})
-        end
-      {% end %}
-    end
-
     @@methods << Method.new(
       name: {{name}},
       body: String.build do |codeio|
-        capture_code {{name.capitalize.id}}MethodContext {{blk}}
+        capture_code {{@type.name.id}}ControllerMethodContext {{blk}}
       end
     )
   end
