@@ -198,6 +198,10 @@ module CSS
       prop("flex-wrap", CSS::FlexWrap::{{fw}})
     end
 
+    macro flexBasis(fb)
+      prop("flex-basis", {{fb}})
+    end
+
     macro justifyContent(jc)
       prop("justify-content", CSS::JustifyContent::{{jc}})
     end
