@@ -150,6 +150,22 @@ module CSS
       prop("margin", {{m}})
     end
 
+    macro marginLeft(ml)
+      prop("margin-left", {{ml}})
+    end
+
+    macro marginRight(mr)
+      prop("margin-right", {{mr}})
+    end
+
+    macro marginTop(mt)
+      prop("margin-top", {{mt}})
+    end
+
+    macro marginBottom(mb)
+      prop("margin-bottom", {{mb}})
+    end
+
     macro border(*b)
       prop("border", border_value({{b.splat}}))
     end
