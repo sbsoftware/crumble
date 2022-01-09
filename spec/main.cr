@@ -1,5 +1,5 @@
-require "./server"
-require "./stimulus_controllers/*"
+require "../src/crumble"
+require "../src/stimulus_controllers/*"
 
 class MyClass < CSS::CSSClass
 end
