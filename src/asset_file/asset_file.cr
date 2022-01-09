@@ -1,11 +1,13 @@
 require "./asset_file_registry"
+require "digest/md5"
 
 class AssetFile
   getter uri_path : String
-
-  @contents : String
+  getter contents : String
+  getter etag : String
 
   def initialize(@uri_path, @contents)
+    @etag = Digest::MD5.hexdigest(@contents)
     AssetFileRegistry.add(@uri_path, self)
   end
 
@@ -20,6 +22,13 @@ class AssetFile
   def self.handle(ctx)
     if file = AssetFileRegistry.query(ctx.request.path)
       ctx.response.content_type = file.mime_type
+      ctx.response.headers["ETag"] = file.etag
+
+      if ctx.request.headers["If-None-Match"].includes?(file.etag)
+        ctx.response.status_code = 304
+        return true
+      end
+
       ctx.response.print file
       return true
     end
