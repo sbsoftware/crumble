@@ -24,7 +24,7 @@ class AssetFile
       ctx.response.content_type = file.mime_type
       ctx.response.headers["ETag"] = file.etag
 
-      if ctx.request.headers["If-None-Match"].includes?(file.etag)
+      if ctx.request.headers["If-None-Match"]?.try { includes?(file.etag) }
         ctx.response.status_code = 304
         return true
       end
