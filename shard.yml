@@ -8,5 +8,7 @@ dependencies:
 targets:
   crumble:
     main: src/cli.cr
+scripts:
+  postinstall: shards build
 executables:
   - crumble
