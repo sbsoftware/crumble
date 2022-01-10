@@ -4,3 +4,9 @@ version: 0.5.1
 dependencies:
   pg:
     github: will/crystal-pg
+
+targets:
+  crumble:
+    main: src/cli.cr
+executables:
+  - crumble
