@@ -1,58 +1,91 @@
 require "option_parser"
+require "yaml"
 
-enum Commands
-  Init
-end
-
-def log_verbose(str)
-  STDERR.puts str
-end
-
-command = nil
-verbose = false
-name = nil
-
-def ensure_dir(path, verbose)
-  if Dir.exists?(path)
-    log_verbose "#{path} already exists" if verbose
-  else
-    log_verbose "Creating #{path}" if verbose
-    Dir.mkdir path
+class Crumble::CLI
+  enum Command
+    Init
   end
-end
 
-def ensure_file(path, verbose)
-  if File.exists?(path)
-    log_verbose "#{path} already exists" if verbose
-  else
-    log_verbose "Creating #{path}" if verbose
-    File.touch path
-  end
-end
+  SRC_FOLDER = "src"
+  VIEWS_FOLDER = Path.new(SRC_FOLDER, "views")
+  STIMULUS_FOLDER = Path.new(SRC_FOLDER, "stimulus_controllers")
 
-parser = OptionParser.parse do |parser|
-  parser.banner = "Usage: crumble [command] [options]"
-  parser.on "init", "Initialize new crumble app" do
-    command = Commands::Init
-    parser.banner = "Usage: crumble init [options] <app_name>"
-    parser.unknown_args do |args, whatever|
-      name = args.first?
+  @command : Command?
+  @name : String? = parse_shard_name
+  @verbose = false
+
+  def initialize
+    @parser = OptionParser.parse do |parser|
+      parser.banner = "Usage: crumble [command] [options]"
+      parser.on "init", "Initialize new crumble app" do
+        @command = Command::Init
+        parser.banner = "Usage: crumble init [options]"
+        parser.on "-n", "--name NAME", "The name of the main executable" do |name|
+          @name = name
+        end
+        parser.on "--help", "Print out help" do
+          puts parser
+        end
+      end
+      parser.on "-v", "--verbose", "Comment every step" { @verbose = true }
     end
   end
-  parser.on "-v", "--verbose", "Comment every step" { verbose = true }
-end
 
-src_folder = "src"
-
-case command
-in Commands::Init
-  ensure_dir(src_folder, verbose)
-  if name
-    ensure_file("#{src_folder}/#{name}.cr", verbose)
-  else
-    puts parser
+  def run
+    case @command
+    in Command::Init
+      init
+    in Nil
+      puts @parser
+      exit(1)
+    end
   end
-in Nil
-  puts parser
-  exit(1)
+
+  def init
+    ensure_dir(SRC_FOLDER)
+    ensure_dir(VIEWS_FOLDER)
+    ensure_dir(STIMULUS_FOLDER)
+    ensure_file("#{SRC_FOLDER}/crumble_server.cr", {{read_file "#{__DIR__}/cli/templates/crumble_server.cr"}})
+    if @name
+      ensure_file("#{SRC_FOLDER}/#{@name}.cr", "")
+    else
+      puts @parser
+    end
+  end
+
+  def log_verbose(str)
+    STDERR.puts str
+  end
+
+  def log(str)
+    puts str
+  end
+
+  def ensure_dir(path)
+    if Dir.exists?(path)
+      log_verbose "#{path} already exists" if @verbose
+    else
+      log_verbose "Creating #{path}" if @verbose
+      Dir.mkdir path
+    end
+  end
+
+  def ensure_file(path, default_contents)
+    if File.exists?(path)
+      log_verbose "#{path} already exists" if @verbose
+    else
+      log_verbose "Creating #{path}" if @verbose
+      File.write path, default_contents
+    end
+  end
+
+  def self.parse_shard_name
+    return unless File.exists?("shard.yml")
+
+    File.open("shard.yml") do |file|
+      YAML.parse file
+    end["name"].to_s
+  end
 end
+
+Crumble::CLI.new.run
