@@ -190,6 +190,10 @@ module CSS
       prop("max-width", {{mw}})
     end
 
+    macro maxHeight(mh)
+      prop("max-height", {{mh}})
+    end
+
     macro boxShadow(offset_x, offset_y, blur_radius, spread_radius, color)
       prop("box-shadow", "#{{{offset_x}}} #{{{offset_y}}} #{{{blur_radius}}} #{{{spread_radius}}} #{colorValue({{color}})}")
     end
