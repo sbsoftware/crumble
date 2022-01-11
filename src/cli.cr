@@ -9,6 +9,7 @@ class Crumble::CLI
   SRC_FOLDER = "src"
   VIEWS_FOLDER = Path.new(SRC_FOLDER, "views")
   STIMULUS_FOLDER = Path.new(SRC_FOLDER, "stimulus_controllers")
+  RESOURCES_FOLDER = Path.new(SRC_FOLDER, "resources")
 
   @command : Command?
   @name : String? = parse_shard_name
@@ -45,7 +46,8 @@ class Crumble::CLI
     ensure_dir(SRC_FOLDER)
     ensure_dir(VIEWS_FOLDER)
     ensure_dir(STIMULUS_FOLDER)
-    ensure_file("#{SRC_FOLDER}/crumble_server.cr", {{read_file "#{__DIR__}/cli/templates/crumble_server.cr"}})
+    ensure_dir(RESOURCES_FOLDER)
+    overwrite_file("#{SRC_FOLDER}/crumble_server.cr", {{read_file "#{__DIR__}/cli/templates/crumble_server.cr"}})
     if @name
       ensure_file("#{SRC_FOLDER}/#{@name}.cr", "")
     else
@@ -77,6 +79,11 @@ class Crumble::CLI
       log_verbose "Creating #{path}" if @verbose
       File.write path, default_contents
     end
+  end
+
+  def overwrite_file(path, contents)
+    log_verbose "Overwriting #{path}" if @verbose
+    File.write path, contents
   end
 
   def self.parse_shard_name
