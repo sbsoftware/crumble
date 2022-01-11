@@ -8,7 +8,7 @@ class HexColor
   def to_s(io : IO)
     io << "#"
     @components.each do |comp|
-      io << comp.to_s(16, upcase: true)
+      io << comp.to_s(16, upcase: true).rjust(2, '0')
     end
   end
 end
