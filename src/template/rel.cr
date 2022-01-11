@@ -3,6 +3,9 @@ enum Rel
   External
   Noopener
   Nofollow
+  Icon
+  Alternate
+  MaskIcon
 
   def to_s(io)
     io << self.to_s.dasherize
