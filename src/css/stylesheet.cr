@@ -98,6 +98,14 @@ module CSS
       prop("background-image", "url(#{{{asset_file}}.uri_path})")
     end
 
+    macro backgroundRepeat(br)
+      prop("background-repeat", CSS::BackgroundRepeat::{{br}})
+    end
+
+    macro backgroundSize(bs)
+      prop("background-size", CSS::BackgroundSize::{{bs}})
+    end
+
     macro color(c)
       prop("color", colorValue({{c}}))
     end
