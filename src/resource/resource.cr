@@ -46,4 +46,12 @@ class Resource
   def id
     self.class.match(@ctx.request.path).try { |m| m[2].to_i64 }.not_nil!
   end
+
+  def self.html_attr_key
+    "href"
+  end
+
+  def self.html_attr_value(io)
+    io << uri_path
+  end
 end

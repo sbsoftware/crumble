@@ -20,7 +20,7 @@ class Template
 
   macro eval_exp(&blk)
     {% if blk.body.is_a?(Call) %}
-      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(style resource_link stimulus_include)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
+      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(style stimulus_include)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
         {% if blk.body.block %}
           {% if blk.body.named_args && blk.args.size > 0 %}
             {{blk.body.name}}({{blk.body.args.splat}}, {{blk.body.named_args.splat}}) do
@@ -85,14 +85,6 @@ class Template
 
   macro style(style_class)
     link(Rel::Stylesheet, href({{style_class}}.uri_path))
-  end
-
-  macro resource_link(res, caption)
-    a(href({{res}}.uri_path)) do
-      capture_elems do
-        {{caption}}
-      end
-    end
   end
 
   def tag(io, name, *attrs)
