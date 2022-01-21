@@ -1,2 +1,6 @@
 name: crumble
 version: 0.3.0
+
+dependencies:
+  pg:
+    github: will/crystal-pg
