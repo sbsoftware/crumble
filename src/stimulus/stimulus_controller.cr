@@ -5,8 +5,11 @@ JavascriptFile.register "assets/stimulus.js", "#{__DIR__}/../../assets/stimulus.
 
 abstract class JavascriptEvent
   def self.to_s(io : IO)
-    io << name.dasherize
+    io << name.chomp("Event").dasherize
   end
+end
+
+class ClickEvent < JavascriptEvent
 end
 
 record Target, controller : StimulusController.class, name : String do
@@ -57,6 +60,20 @@ class Methods
   end
 end
 
+record Action, event : JavascriptEvent.class, controller : StimulusController.class, method : Method do
+  def html_attr_key
+    "data-action"
+  end
+
+  def html_attr_value(io)
+    io << event
+    io << "->"
+    io << controller.controller_name
+    io << "#"
+    io << method.name
+  end
+end
+
 abstract class CallContext
   @receiver : String
 
@@ -95,7 +112,7 @@ class NullContext
   end
 end
 
-class MethodContext < CallContext
+class GeneralMethodContext < CallContext
   def window
     forward(ElementContext, "window")
   end
@@ -105,7 +122,7 @@ class MethodContext < CallContext
   end
 end
 
-class ControllerContext < CallContext
+class GeneralControllerContext < CallContext
   def dispatch(event : JavascriptEvent.class, target : ElementContext)
     resolve_call("dispatch", event.to_s.dump, {target: target, prefix: NullContext})
   end
@@ -175,12 +192,12 @@ abstract class StimulusController
   end
 
   macro inherited
-    private class {{@type.name.id}}ControllerContext < ControllerContext
+    private class ControllerContext < GeneralControllerContext
     end
 
-    private class {{@type.name.id}}ControllerMethodContext < MethodContext
+    private class ControllerMethodContext < GeneralMethodContext
       def this
-        forward({{@type.name.id}}ControllerContext, "this")
+        forward(ControllerContext, "this")
       end
     end
   end
@@ -191,7 +208,7 @@ abstract class StimulusController
         Target.new(self, "{{target_name.id}}")
       end
 
-      private class {{@type.name.id}}ControllerContext
+      private class ControllerContext
         def {{target_name.camelcase(lower: true).id}}Target
           forward(ElementContext, "{{target_name.camelcase(lower: true).id}}Target")
         end
@@ -202,12 +219,18 @@ abstract class StimulusController
   end
 
   macro method(name, &blk)
-    @@methods << Method.new(
+    @@{{name.id}}_method = Method.new(
       name: {{name}},
       body: String.build do |codeio|
-        capture_code {{@type.name.id}}ControllerMethodContext {{blk}}
+        capture_code ControllerMethodContext {{blk}}
       end
     )
+
+    def self.{{name.id}}_action(event)
+      Action.new(event, self, @@{{name.id}}_method)
+    end
+
+    @@methods << @@{{name.id}}_method
   end
 
   def self.controller_name
