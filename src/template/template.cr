@@ -69,7 +69,7 @@ class Template
     {% elsif blk.body.is_a?(StringInterpolation) %}
       __tplio__ << {{blk.body}}
       __tplio__ << "\n"
-    {% elsif blk.body.is_a?(Path) || blk.body.is_a?(MacroExpression) %}
+    {% elsif blk.body.is_a?(Path) || blk.body.is_a?(MacroExpression) || blk.body.is_a?(InstanceVar) || blk.body.is_a?(Var) %}
       __tplio__ << {{blk.body}}
     {% else %}
       {{pp "Unknown node"}}
