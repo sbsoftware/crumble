@@ -1,7 +1,8 @@
 require "./resource_path"
 
-class Resource
+abstract class Resource
   @ctx : HTTP::Server::Context
+  getter layout : Template
 
   def self.handle(ctx)
     return false if match(ctx.request.path).nil?
@@ -32,10 +33,19 @@ class Resource
   end
 
   def initialize(@ctx)
+    @layout = layout_class.new.tap do |layout|
+      layout_config(layout)
+    end
+  end
+
+  abstract def layout_class
+
+  def layout_config(layout)
   end
 
   def render(tpl)
-    @ctx.response.print tpl
+    @layout.main_docking_point = tpl
+    @ctx.response.print @layout
   end
 
   def index
