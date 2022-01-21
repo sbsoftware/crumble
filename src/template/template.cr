@@ -78,10 +78,6 @@ class Template
     {% end %}
   end
 
-  # default implementation to calm down the compiler
-  def to_s(__tplio__ : IO)
-  end
-
   macro template(&blk)
     def to_s(__tplio__ : IO)
       capture_elems {{blk}}
