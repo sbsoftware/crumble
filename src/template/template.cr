@@ -41,7 +41,7 @@ class Template
 
   macro eval_exp(&blk)
     {% if blk.body.is_a?(Call) %}
-      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(style stimulus_include)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
+      {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(doctype style stimulus_include)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
         {% if blk.body.block %}
           {% if blk.body.named_args && blk.args.size > 0 %}
             {{blk.body.name}}({{blk.body.args.splat}}, {{blk.body.named_args.splat}}) do
@@ -99,6 +99,12 @@ class Template
       standalone_tag(__tplio__, {{tag_name}}, \{{attrs.splat}})
     end
   {% end %}
+
+  macro doctype(dt = "html")
+    __tplio__ << "<!doctype "
+    __tplio__ << {{dt.id.stringify}}
+    __tplio__ << ">\n"
+  end
 
   macro href(value)
     Href.new({{value}})
