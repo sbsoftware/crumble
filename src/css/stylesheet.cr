@@ -275,7 +275,7 @@ module CSS
     end
 
     def self.uri_path
-      "/styles/#{self.name.underscore}.css"
+      "/styles/#{self.name.underscore.gsub("::", "__")}.css"
     end
   end
 end
