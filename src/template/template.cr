@@ -1,5 +1,22 @@
 require "./*"
 
+macro template(method_name, &blk)
+  private class {{method_name.id.stringify.camelcase.id}}Template < Template
+    @parent : {{@type}}
+
+    forward_missing_to @parent
+
+    def initialize(@parent)
+    end
+
+    Template.template {{blk}}
+  end
+
+  def {{method_name.id}}
+    {{method_name.id.stringify.camelcase.id}}Template.new(self)
+  end
+end
+
 class Template
   CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong i form aside main section header h1 h2 h3 h4 h5 h6 table thead tbody tr td)
   STANDALONE_TAG_NAMES = %w(link img br)
