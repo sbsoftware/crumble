@@ -16,6 +16,10 @@ class FakeDB
     @@queries << query
     yield FakeResult.new([{"id" => 122_i64, "name" => "Lulu", "age" => 22} of String => DB::Any])
   end
+
+  def self.exec(query)
+    @@queries << query
+  end
 end
 
 class FakeResult
@@ -47,7 +51,7 @@ class FakeResult
 end
 
 class MyModel < Crumble::ORM
-  column id : Int64?
+  id_column id : Int64?
   column name : String?
 
   def self.db
@@ -56,6 +60,10 @@ class MyModel < Crumble::ORM
 end
 
 describe "MyModel" do
+  before_each do
+    FakeDB.queries.clear
+  end
+
   describe ".find" do
     it "generates the correct SQL query" do
       model = MyModel.find(3)
@@ -77,6 +85,27 @@ describe "MyModel" do
     it "generates the correct SQL query for mixed values" do
       models = MyModel.where({"id" => 122_i64, "name" => "Stefanie"})
       MyModel.db.queries.last.should eq("SELECT * FROM my_models WHERE id=122 AND name='Stefanie'")
+    end
+  end
+
+  describe "#save" do
+    context "when the instance has an id" do
+      it "generates an update statement" do
+        my_model = MyModel.new
+        my_model.id = 122_i64
+        my_model.name = "Katrina"
+        my_model.save
+        MyModel.db.queries.last.should eq("UPDATE my_models SET name='Katrina' WHERE id=122")
+      end
+    end
+
+    context "when the instance has no id" do
+      it "generates an insert statement" do
+        my_model = MyModel.new
+        my_model.name = "Sabrina"
+        my_model.save
+        MyModel.db.queries.last.should eq("INSERT INTO my_models(name) VALUES ('Sabrina')")
+      end
     end
   end
 end

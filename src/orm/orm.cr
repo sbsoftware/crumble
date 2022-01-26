@@ -5,7 +5,13 @@ require "./to_sql_val.cr"
 abstract class Crumble::ORM
   @@db : DB::Database?
 
+  annotation Crumble::ORM::IdColumn; end
   annotation Crumble::ORM::Column; end
+
+  macro id_column(type_decl)
+    @[Crumble::ORM::IdColumn]
+    property {{type_decl}}
+  end
 
   macro column(type_decl)
     @[Crumble::ORM::Column]
@@ -18,8 +24,16 @@ abstract class Crumble::ORM
     @@db = DB.open(ENV.fetch("DATABASE_URL", "postgres://postgres@localhost/postgres"))
   end
 
+  def db
+    self.class.db
+  end
+
   def self.table_name
     "#{name.underscore}s"
+  end
+
+  def table_name
+    self.class.table_name
   end
 
   def self.find(id)
@@ -73,7 +87,7 @@ abstract class Crumble::ORM
     res.each_column do |column|
       {% begin %}
         case column
-          {% for model_col in @type.instance_vars.select { |var| var.annotation(Crumble::ORM::Column) } %}
+          {% for model_col in @type.instance_vars.select { |var| var.annotation(Crumble::ORM::Column) || var.annotation(Crumble::ORM::IdColumn) } %}
             when {{model_col.name.stringify}}
               @{{model_col.name}} = res.read({{model_col.type}})
           {% end %}
@@ -83,5 +97,50 @@ abstract class Crumble::ORM
       {% end %}
     end
     self
+  end
+
+  def save
+    if id
+      update_record
+    else
+      insert_record
+    end
+  end
+
+  def update_record
+    query = String.build do |qry|
+      qry << "UPDATE "
+      qry << table_name
+      qry << " SET "
+      column_values.to_h.join(qry, ", ") do |(k, v), io|
+        io << k
+        io << "="
+        if v.nil?
+          io << "NULL"
+        else
+          v.to_sql_val(io)
+        end
+      end
+      qry << " WHERE id="
+      qry << id
+    end
+    db.exec query
+  end
+
+  def insert_record
+    query = String.build do |qry|
+      qry << "INSERT INTO "
+      qry << table_name
+      qry << "("
+      column_values.keys.join(qry, ", ")
+      qry << ") VALUES ("
+      column_values.values.join(qry, ", ") { |v, io| v.nil? ? (io << "NULL") : v.to_sql_val(io) }
+      qry << ")"
+    end
+    db.exec query
+  end
+
+  macro column_values
+    { {{@type.instance_vars.select { |var| var.annotation(Crumble::ORM::Column) }.map { |var| "#{var.name}: @#{var.name}".id }.splat}} }
   end
 end
