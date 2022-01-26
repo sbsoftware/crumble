@@ -1,5 +1,6 @@
 require "db"
 require "pg"
+require "./to_sql_val.cr"
 
 abstract class Crumble::ORM
   @@db : DB::Database?
@@ -22,22 +23,53 @@ abstract class Crumble::ORM
   end
 
   def self.find(id)
-    db.query_one("SELECT * FROM #{table_name} WHERE id=#{id} LIMIT 1") do |res|
-      new.load_result(res)
-    end
+    query_one("SELECT * FROM #{table_name} WHERE id=#{id} LIMIT 1")
   end
 
   def self.all
-    db.query("SELECT * FROM #{table_name}") do |res|
-      instances = [] of self
-      res.each do
-        instances << new.load_result(res)
+    query_many("SELECT * FROM #{table_name}")
+  end
+
+  def self.where(conditions)
+    query_many("SELECT * FROM #{table_name} WHERE #{conditions_string(conditions)}")
+  end
+
+  def self.conditions_string(conditions)
+    String.build do |str|
+      conditions.each_with_index do |(col, val), i|
+        str << col
+        if val.nil?
+          str << " IS NULL"
+        else
+          str << "="
+          val.to_sql_val(str)
+        end
+        str << " AND " unless i == conditions.size - 1
       end
-      instances
     end
   end
 
-  def load_result(res)
+  def self.query_many(sql)
+    db.query(sql) do |res|
+      load_many_from_result(res)
+    end
+  end
+
+  def self.query_one(sql)
+    db.query_one(sql) do |res|
+      new.load_one_from_result(res)
+    end
+  end
+
+  def self.load_many_from_result(res)
+    instances = [] of self
+    res.each do
+      instances << new.load_one_from_result(res)
+    end
+    instances
+  end
+
+  def load_one_from_result(res)
     res.each_column do |column|
       {% begin %}
         case column
