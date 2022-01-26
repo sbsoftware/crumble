@@ -9,11 +9,18 @@ macro template(method_name, &blk)
     def initialize(@parent)
     end
 
+    def initialize(@parent, @main_docking_point)
+    end
+
     Template.template {{blk}}
   end
 
   def {{method_name.id}}
     {{method_name.id.stringify.camelcase.id}}Template.new(self)
+  end
+
+  def {{method_name.id}}(main_docking_point)
+    {{method_name.id.stringify.camelcase.id}}Template.new(self, main_docking_point)
   end
 end
 
@@ -24,6 +31,12 @@ class Template
   alias DockingPoint = String | Template | Nil
 
   property main_docking_point : DockingPoint = nil
+
+  def initialize
+  end
+
+  def initialize(@main_docking_point)
+  end
 
   macro capture_elems(&blk)
     {% if blk %}
