@@ -121,6 +121,10 @@ class Template
     Href.new({{value}})
   end
 
+  macro action(value)
+    TagAttr.new("action", {{value}})
+  end
+
   macro style(style_class)
     link(Rel::Stylesheet, href({{style_class}}.uri_path))
   end
