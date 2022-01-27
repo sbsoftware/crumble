@@ -84,6 +84,8 @@ class Template
       __tplio__ << "\n"
     {% elsif blk.body.is_a?(Path) || blk.body.is_a?(MacroExpression) || blk.body.is_a?(InstanceVar) || blk.body.is_a?(Var) %}
       __tplio__ << {{blk.body}}
+    {% elsif blk.body.is_a?(Nop) %}
+      # do nothing
     {% else %}
       {{pp "Unknown node"}}
       {{pp blk.body}}
