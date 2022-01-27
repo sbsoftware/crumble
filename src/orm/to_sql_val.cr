@@ -17,3 +17,11 @@ struct Int64
     io << self
   end
 end
+
+struct Time
+  def to_sql_val(io : IO)
+    io << "'"
+    io << self
+    io << "'"
+  end
+end
