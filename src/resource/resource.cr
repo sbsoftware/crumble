@@ -12,6 +12,20 @@ abstract class Resource
     case ctx.request.method
     when "GET"
       instance.index
+    when "POST"
+      if instance.id?
+        if instance.responds_to? :update
+          instance.update
+        else
+          return false
+        end
+      else
+        if instance.responds_to? :create
+          instance.create
+        else
+          return false
+        end
+      end
     end
     return true
   end
@@ -53,8 +67,12 @@ abstract class Resource
     @ctx.response.print "Not Found"
   end
 
+  def id?
+    self.class.match(@ctx.request.path).try { |m| m[2].to_i64 }
+  end
+
   def id
-    self.class.match(@ctx.request.path).try { |m| m[2].to_i64 }.not_nil!
+    id?.not_nil!
   end
 
   def self.html_attr_key
