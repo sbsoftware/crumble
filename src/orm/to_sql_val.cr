@@ -18,6 +18,16 @@ struct Int64
   end
 end
 
+struct Bool
+  def to_sql_val(io : IO)
+    if self
+      io << "TRUE"
+    else
+      io << "FALSE"
+    end
+  end
+end
+
 struct Time
   def to_sql_val(io : IO)
     io << "'"
