@@ -4,6 +4,7 @@ class Template
     Post
     Put
     Patch
+    Delete
 
     def to_s(io)
       io << self.to_s.upcase
