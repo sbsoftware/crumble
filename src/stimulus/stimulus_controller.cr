@@ -151,8 +151,31 @@ abstract class StimulusController
     def console
       forward(ConsoleContext, "console")
     end
+
+    def fetch(uri, method)
+      forward_call(FetchPromiseContext, "fetch", uri, {method: method}.to_json)
+    end
   end
 
+  class FetchPromiseContext < CallContext
+    def then
+      resolve_call("then", "function(res) {\n#{yield FetchResponseContext.new("res")}\n}")
+    end
+  end
+
+  class FetchResponseContext < CallContext
+    def text
+      forward_call(ResponseTextPromiseContext, "text")
+    end
+  end
+
+  class ResponseTextPromiseContext < CallContext
+    def then
+      resolve_call("then", "function(text) {\n#{yield StringContext.new("text")}\n}")
+    end
+  end
+
+  class StringContext < CallContext
   end
 
   class GeneralControllerContext < CallContext
@@ -162,7 +185,7 @@ abstract class StimulusController
   end
 
   class ConsoleContext < CallContext
-    alias Loggable = String
+    alias Loggable = String | CallContext
 
     def log(*entries : Loggable)
       resolve_call("log", *entries)
@@ -207,25 +230,73 @@ abstract class StimulusController
     io << "\n})"
   end
 
-  macro capture_code(call_context, level = 1, &blk)
+  macro capture_code(call_context, level, io_name, &blk)
     {% if blk.body.is_a?(Expressions) %}
       {% for exp in blk.body.expressions %}
-        capture_code {{call_context}}, {{level}} do
+        capture_code {{call_context}}, {{level}}, {{io_name}} do {{blk.args.size > 0 ? "|#{blk.args.splat}|".id : "".id}}
           {{exp}}
         end
       {% end %}
     {% else %}
-      codeio << "  " * {{level + 1}}
+      {{io_name.id}} << "  " * {{level + 1}}
       {% if blk.body.is_a?(Call) %}
-        {% if blk.body.receiver %}
-          codeio << {{call_context}}.new.{{blk.body.receiver.id}}.{{blk.body.name}}({{blk.body.args.map { |a| a.is_a?(Call) ? "#{call_context}.new.#{a}".id : (a.is_a?(StringLiteral) ? a.stringify : a) }.splat }})
-        {% else %}
-          codeio << {{call_context}}.new.{{blk.body.name}}({{blk.body.args.map { |a| a.is_a?(Call) ? "#{call_context}.new.#{a}".id : (a.is_a?(StringLiteral) ? a.stringify : a) }.splat }})
-        {% end %}
+        {{io_name.id}} << resolve_call({{call_context}}, {{blk.body}}, {{level}}, {{blk.args.splat}})
+        {{debug}}
       {% else %}
         {{ raise "Unknown node: #{blk.body}" }}
       {% end %}
-      codeio << "\n"
+      {{io_name.id}} << "\n"
+    {% end %}
+  end
+
+  macro resolve_call(call_context, call, level, *block_args)
+    {% if call.receiver %}
+      {% if call.receiver.is_a?(Expressions) %}
+        resolve_call({{call_context}}, {{call.receiver.expressions.last}}, {{level}}, {{block_args.splat}}).{{call.name}}(*resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
+          String.build do |blockio_{{level}}|
+            capture_code({{call_context}}, {{level + 1}}, "blockio_{{level}}") {{call.block}}
+          end
+        end
+        {% end %}
+      {{debug}}
+      {% elsif call.receiver.is_a?(Call) %}
+        resolve_call({{call_context}}, {{call.receiver}}, {{level}}, {{block_args.splat}}).{{call.name}}(*resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
+          String.build do |blockio_{{level}}|
+            capture_code({{call_context}}, {{level + 1}}, "blockio_{{level}}") {{call.block}}
+          end
+        end
+        {% end %}
+      {% else %}
+        {% if block_args.includes?(call.receiver) %}
+          {{call.receiver}}.{{call.name}}(*resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}}))
+        {% else %}
+          {{call_context}}.new.{{call.receiver}}.{{call.name}}(*resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}}))
+        {% end %}
+      {% end %}
+    {% else %}
+      {{call_context}}.new.{{call.name}}(*resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}}))
+    {% end %}
+  end
+
+  macro resolve_call_args(call_context, call, level, *block_args)
+    {% if call.args.size > 0 %}
+      { {{call.args.map { |a| "resolve_call_arg(#{call_context}, #{a}, #{block_args.splat})".id }.splat }} }
+    {% else %}
+      Tuple.new
+    {% end %}
+  end
+
+  macro resolve_call_arg(call_context, arg, *block_args)
+    {% if arg.is_a?(Call) %}
+      {% if block_args.includes?(arg.name.id) || block_args.includes?(arg.receiver) %}
+        {{arg}}
+      {% else %}
+        {{call_context}}.new.{{arg}}
+      {% end %}
+    {% elsif arg.is_a?(StringLiteral) %}
+      {{arg.stringify}}
+    {% else %}
+      {{arg}}
     {% end %}
   end
 
@@ -276,7 +347,7 @@ abstract class StimulusController
     @@{{name.id}}_method = Method.new(
       name: {{name.id.stringify}},
       body: String.build do |codeio|
-        capture_code ControllerMethodContext {{blk}}
+        capture_code ControllerMethodContext, 1, "codeio" {{blk}}
       end
     )
 
