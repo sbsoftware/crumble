@@ -13,7 +13,7 @@ abstract class Resource
     when "GET"
       instance.index
     when "POST"
-      if instance.id?
+      if instance.id? && instance.top_level?
         if instance.responds_to? :update
           instance.update
         else
@@ -26,6 +26,12 @@ abstract class Resource
           return false
         end
       end
+    when "DELETE"
+      if instance.responds_to? :destroy
+        instance.destroy
+      else
+        return false
+      end
     end
     return true
   end
@@ -34,16 +40,28 @@ abstract class Resource
     uri_path_matcher.match(path)
   end
 
-  def self.uri_path
+  def self.root_path
     "/" + self.name.chomp("Resource").gsub("::", "/").underscore
   end
 
+  def self.root_path(id)
+    "#{root_path}/#{id}"
+  end
+
+  def self.nested_path
+    ""
+  end
+
+  def self.uri_path
+    root_path
+  end
+
   def self.uri_path(id)
-    "#{uri_path}/#{id}"
+    "#{root_path(id)}#{nested_path}"
   end
 
   def self.uri_path_matcher
-    /#{uri_path}(\/|\/(\d+))?$/
+    /#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
   end
 
   def initialize(@ctx)
@@ -83,6 +101,14 @@ abstract class Resource
 
   def id
     id?.not_nil!
+  end
+
+  def nested?
+    self.class.nested_path.size > 0
+  end
+
+  def top_level?
+    !nested?
   end
 
   def self.html_attr_key
