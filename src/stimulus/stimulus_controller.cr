@@ -39,7 +39,7 @@ abstract class StimulusController
     end
   end
 
-  record Value, controller : StimulusController.class, name : String, value : String do
+  record Value, controller : StimulusController.class, name : String, value : String | Bool do
     def html_attr_key
       "data-#{controller.controller_name}-#{name}-value"
     end
