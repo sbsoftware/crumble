@@ -195,6 +195,9 @@ abstract class StimulusController
   end
 
   class StringContext < CallContext
+    def ===(other)
+      "#{@receiver} === #{other}"
+    end
   end
 
   class GeneralControllerContext < CallContext
@@ -354,7 +357,7 @@ abstract class StimulusController
 
       private class ControllerContext
         def {{value_name.camelcase(lower: true).id}}Value
-          resolve_attr("{{value_name.id}}Value")
+          forward(StringContext, "{{value_name.id}}Value")
         end
       end
 
