@@ -134,6 +134,25 @@ abstract class StimulusController
     def receiver_dot(call)
       @receiver.blank? ? call : "#{@receiver}.#{call}"
     end
+
+    def js_object(args)
+      String.build do |jso|
+        jso << "{"
+        args.to_h.join(jso, ", ") do |(key, val), _jso|
+          _jso << key
+          _jso << ": "
+          case val
+          when String
+            _jso << "\""
+            _jso << val
+            _jso << "\""
+          else
+            _jso << val
+          end
+        end
+        jso << "}"
+      end
+    end
   end
 
   # exists to write JS null from within a crystal hash
@@ -153,7 +172,7 @@ abstract class StimulusController
     end
 
     def fetch(uri, method)
-      forward_call(FetchPromiseContext, "fetch", uri, {method: method}.to_json)
+      forward_call(FetchPromiseContext, "fetch", uri, js_object({method: method}))
     end
   end
 
