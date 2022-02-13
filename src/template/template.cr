@@ -25,7 +25,7 @@ macro template(method_name, &blk)
 end
 
 class Template
-  CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong i form aside main section header h1 h2 h3 h4 h5 h6 table thead tbody tr td)
+  CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong i form aside main section header h1 h2 h3 h4 h5 h6 table thead tbody tr td span dl dt dd)
   STANDALONE_TAG_NAMES = %w(meta link img br)
 
   alias DockingPoint = String | Template | Nil
