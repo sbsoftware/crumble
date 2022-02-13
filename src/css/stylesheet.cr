@@ -194,6 +194,10 @@ module CSS
       prop("font-weight", CSS::FontWeight::{{fw}})
     end
 
+    macro fontStyle(fs)
+      prop("font-style", CSS::FontStyle::{{fs}})
+    end
+
     macro maxWidth(mw)
       prop("max-width", {{mw}})
     end

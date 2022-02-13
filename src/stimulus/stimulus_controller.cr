@@ -280,7 +280,6 @@ abstract class StimulusController
           end
         end
         {% end %}
-      {{debug}}
       {% elsif call.receiver.is_a?(Call) %}
         resolve_call({{call_context}}, {{call.receiver}}, {{level}}, {{block_args.splat}}).{{call.name}}(*resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
           String.build do |blockio_{{level}}|
