@@ -89,7 +89,7 @@ class Template
     {% else %}
       {{pp "Unknown node"}}
       {{pp blk.body}}
-      {{pp blk.body.name}}
+      {{pp blk.body.stringify}}
     {% end %}
   end
 
