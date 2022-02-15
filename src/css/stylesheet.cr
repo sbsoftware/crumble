@@ -71,10 +71,7 @@ module CSS
         {% elsif sel.receiver && sel.name.stringify == "<=" %}
           CSS::PseudoclassSelector.new(make_selector({{sel.receiver}}), CSS::Pseudoclass::{{sel.args.first}})
         {% else %}
-          {{pp sel.receiver}}
-          {{pp sel.name}}
-          {{pp sel.args}}
-          {% raise "Unknown tag name: #{sel.id.stringify}" %}
+          {{sel}}.selector
         {% end %}
       {% elsif sel.is_a?(Expressions) %}
         make_selector({{sel.expressions.last}})

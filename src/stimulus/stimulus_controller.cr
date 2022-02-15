@@ -47,6 +47,10 @@ abstract class StimulusController
     def html_attr_value(io)
       io << value
     end
+
+    def selector
+      CSS::AttrSelector.new(html_attr_key, value.to_s)
+    end
   end
 
   class Values
