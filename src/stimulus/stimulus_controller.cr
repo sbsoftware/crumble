@@ -119,6 +119,10 @@ abstract class StimulusController
       receiver_dot(name)
     end
 
+    def resolve_assignment(name, new_val)
+      "#{receiver_dot(name)} = #{new_val}"
+    end
+
     def forward(ctx_class, next_receiver)
       ctx_class.new(receiver_dot(next_receiver))
     end
@@ -361,6 +365,10 @@ abstract class StimulusController
       private class ControllerContext
         def {{value_name.camelcase(lower: true).id}}Value
           forward(StringContext, "{{value_name.id}}Value")
+        end
+
+        def {{value_name.camelcase(lower: true).id}}Value=(new_val)
+          resolve_assignment("{{value_name.id}}Value", new_val)
         end
       end
 
