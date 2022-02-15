@@ -198,6 +198,10 @@ module CSS
       prop("font-style", CSS::FontStyle::{{fs}})
     end
 
+    macro textAlign(ta)
+      prop("text-align", CSS::TextAlign::{{ta}})
+    end
+
     macro maxWidth(mw)
       prop("max-width", {{mw}})
     end
