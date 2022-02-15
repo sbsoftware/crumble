@@ -272,14 +272,41 @@ abstract class StimulusController
         end
       {% end %}
     {% else %}
-      {{io_name.id}} << "  " * {{level + 1}}
       {% if blk.body.is_a?(Call) %}
+        {{io_name.id}} << "  " * {{level + 1}}
         {{io_name.id}} << resolve_call({{call_context}}, {{blk.body}}, {{level}}, {{blk.args.splat}})
-        {{debug}}
+        {% if level >= 0 %}
+          {{io_name.id}} << "\n"
+        {% end %}
+      {% elsif blk.body.is_a?(If) %}
+        {{io_name.id}} << "  " * {{level + 1}}
+        {{io_name.id}} << "if ("
+        capture_code {{call_context}}, -1, {{io_name}} { {{blk.body.cond}} }
+        {{io_name.id}} << ") {\n"
+        capture_code {{call_context}}, {{level + 1}}, {{io_name}} { {{blk.body.then}} }
+        {{io_name.id}} << "\n"
+        {{io_name.id}} << "  " * {{level + 1}}
+        {{io_name.id}} << "}"
+        {% if blk.body.else %}
+          {{io_name.id}} << " else {\n"
+          capture_code {{call_context}}, {{level + 1}}, {{io_name}} { {{blk.body.else}} }
+          {{io_name.id}} << "\n"
+          {{io_name.id}} << "  " * {{level + 1}}
+          {{io_name.id}} << "}"
+        {% end %}
+        {{io_name.id}} << "\n"
+      {% elsif blk.body.is_a?(Path) %}
+        {{io_name.id}} << "  " * {{level + 1}}
+        {{io_name.id}} << "\""
+        {{io_name.id}} << {{blk.body}}
+        {{io_name.id}} << "\""
+      {% elsif blk.body.is_a?(Return) %}
+        {{io_name.id}} << "  " * {{level + 1}}
+        {{io_name.id}} << "return "
+        capture_code {{call_context}}, {{level + 1}}, {{io_name}} { {{blk.body.exp}} }
       {% else %}
         {{ raise "Unknown node: #{blk.body}" }}
       {% end %}
-      {{io_name.id}} << "\n"
     {% end %}
   end
 
@@ -387,6 +414,12 @@ abstract class StimulusController
         capture_code ControllerMethodContext, 1, "codeio" {{blk}}
       end
     )
+
+    private class ControllerContext
+      def {{name.id}}(*args)
+        forward_call(StringContext, "{{name.id}}", *args)
+      end
+    end
 
     def self.{{name.id}}_action(event)
       Action.new(event, self, @@{{name.id}}_method)
