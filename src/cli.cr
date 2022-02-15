@@ -7,9 +7,11 @@ class Crumble::CLI
   end
 
   SRC_FOLDER = "src"
+  MODELS_FOLDER = Path.new(SRC_FOLDER, "models")
   VIEWS_FOLDER = Path.new(SRC_FOLDER, "views")
   STIMULUS_FOLDER = Path.new(SRC_FOLDER, "stimulus_controllers")
   RESOURCES_FOLDER = Path.new(SRC_FOLDER, "resources")
+  STYLES_FOLDER = Path.new(SRC_FOLDER, "styles")
 
   @command : Command?
   @name : String? = parse_shard_name
@@ -44,12 +46,14 @@ class Crumble::CLI
 
   def init
     ensure_dir(SRC_FOLDER)
+    ensure_dir(MODELS_FOLDER)
     ensure_dir(VIEWS_FOLDER)
     ensure_dir(STIMULUS_FOLDER)
     ensure_dir(RESOURCES_FOLDER)
+    ensure_dir(STYLES_FOLDER)
     overwrite_file("#{SRC_FOLDER}/crumble_server.cr", {{read_file "#{__DIR__}/cli/templates/crumble_server.cr"}})
     if @name
-      ensure_file("#{SRC_FOLDER}/#{@name}.cr", "")
+      ensure_file("#{SRC_FOLDER}/#{@name}.cr", {{read_file "#{__DIR__}/cli/templates/main.cr"}})
     else
       puts @parser
     end
