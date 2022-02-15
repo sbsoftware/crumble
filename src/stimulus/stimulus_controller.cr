@@ -147,13 +147,17 @@ abstract class StimulusController
       String.build do |jso|
         jso << "{"
         args.to_h.join(jso, ", ") do |(key, val), _jso|
+          _jso << "\""
           _jso << key
+          _jso << "\""
           _jso << ": "
           case val
           when String
             _jso << "\""
             _jso << val
             _jso << "\""
+          when Hash
+            _jso << js_object(val)
           else
             _jso << val
           end
@@ -179,8 +183,8 @@ abstract class StimulusController
       forward(ConsoleContext, "console")
     end
 
-    def fetch(uri, method)
-      forward_call(FetchPromiseContext, "fetch", uri, js_object({method: method}))
+    def fetch(uri, method, headers = {} of String => String)
+      forward_call(FetchPromiseContext, "fetch", uri, js_object({method: method, headers: headers}))
     end
   end
 
