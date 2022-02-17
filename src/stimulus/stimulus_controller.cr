@@ -1,16 +1,29 @@
 require "../asset_file"
 require "../template"
-require "../js/capture"
+require "../js/*"
 
 JavascriptFile.register "assets/stimulus.js", "#{__DIR__}/../../assets/stimulus.js"
 
-abstract class JavascriptEvent
+abstract class JavascriptEvent < JS::CallContext
   def self.to_s(io : IO)
     io << name.chomp("Event").dasherize
   end
 end
 
 class ClickEvent < JavascriptEvent
+end
+
+class LoadEvent < JavascriptEvent
+end
+
+class FetchEvent < JavascriptEvent
+  def respondWith(response)
+    resolve_call("respondWith", response)
+  end
+
+  def request
+    forward(JS::RequestContext, "request")
+  end
 end
 
 abstract class StimulusController
@@ -106,68 +119,6 @@ abstract class StimulusController
     end
   end
 
-  abstract class CallContext
-    @receiver : String
-
-    def initialize(@receiver = "")
-    end
-
-    def resolve_call(name, *args)
-      "#{receiver_dot(name)}(#{args.join(", ")})"
-    end
-
-    def resolve_attr(name)
-      receiver_dot(name)
-    end
-
-    def resolve_assignment(name, new_val)
-      "#{receiver_dot(name)} = #{new_val}"
-    end
-
-    def forward(ctx_class, next_receiver)
-      ctx_class.new(receiver_dot(next_receiver))
-    end
-
-    def forward_call(ctx_class, next_receiver, *args)
-      ctx_class.new(resolve_call(next_receiver, *args))
-    end
-
-    def to_s(io : IO)
-      io << @receiver
-    end
-
-    def inspect(io : IO)
-      io << @receiver
-    end
-
-    def receiver_dot(call)
-      @receiver.blank? ? call : "#{@receiver}.#{call}"
-    end
-
-    def js_object(args)
-      String.build do |jso|
-        jso << "{"
-        args.to_h.join(jso, ", ") do |(key, val), _jso|
-          _jso << "\""
-          _jso << key
-          _jso << "\""
-          _jso << ": "
-          case val
-          when String
-            _jso << "\""
-            _jso << val
-            _jso << "\""
-          when Hash
-            _jso << js_object(val)
-          else
-            _jso << val
-          end
-        end
-        jso << "}"
-      end
-    end
-  end
-
   # exists to write JS null from within a crystal hash
   class NullContext
     def self.inspect(io : IO)
@@ -175,79 +126,9 @@ abstract class StimulusController
     end
   end
 
-  class GeneralMethodContext < CallContext
-    def window
-      forward(ElementContext, "window")
-    end
-
-    def console
-      forward(ConsoleContext, "console")
-    end
-
-    def fetch(uri, method, headers = {} of String => String)
-      forward_call(FetchPromiseContext, "fetch", uri, js_object({method: method, headers: headers}))
-    end
-  end
-
-  class FetchPromiseContext < CallContext
-    def then
-      resolve_call("then", "function(res) {\n#{yield FetchResponseContext.new("res")}\n}")
-    end
-  end
-
-  class FetchResponseContext < CallContext
-    def text
-      forward_call(ResponseTextPromiseContext, "text")
-    end
-  end
-
-  class ResponseTextPromiseContext < CallContext
-    def then
-      resolve_call("then", "function(text) {\n#{yield StringContext.new("text")}\n}")
-    end
-  end
-
-  class StringContext < CallContext
-    def ===(other)
-      "#{@receiver} === #{other}"
-    end
-  end
-
-  class GeneralControllerContext < CallContext
-    def dispatch(event : JavascriptEvent.class, target : ElementContext)
+  class GeneralControllerContext < JS::CallContext
+    def dispatch(event : JavascriptEvent.class, target : JS::CallContext)
       resolve_call("dispatch", event.to_s.dump, {target: target, prefix: NullContext})
-    end
-  end
-
-  class ConsoleContext < CallContext
-    alias Loggable = String | CallContext
-
-    def log(*entries : Loggable)
-      resolve_call("log", *entries)
-    end
-  end
-
-  class ElementContext < CallContext
-    def value
-      resolve_attr("value")
-    end
-
-    def innerHTML
-      resolve_attr("innerHTML")
-    end
-
-    def classList
-      forward(ClassListContext, "classList")
-    end
-
-    def dataset
-      resolve_attr("dataset")
-    end
-  end
-
-  class ClassListContext < CallContext
-    def toggle(klass : CSS::CSSClass.class)
-      resolve_call("toggle", klass.to_s.dump)
     end
   end
 
@@ -270,7 +151,7 @@ abstract class StimulusController
     private class ControllerContext < GeneralControllerContext
     end
 
-    private class ControllerMethodContext < GeneralMethodContext
+    private class ControllerMethodContext < JS::WindowContext
       def this
         forward(ControllerContext, "this")
       end
@@ -285,7 +166,7 @@ abstract class StimulusController
 
       private class ControllerContext
         def {{target_name.camelcase(lower: true).id}}Target
-          forward(ElementContext, "{{target_name.camelcase(lower: true).id}}Target")
+          forward(JS::ElementContext, "{{target_name.camelcase(lower: true).id}}Target")
         end
       end
 
@@ -301,7 +182,7 @@ abstract class StimulusController
 
       private class ControllerContext
         def {{value_name.camelcase(lower: true).id}}Value
-          forward(StringContext, "{{value_name.id}}Value")
+          forward(JS::StringContext, "{{value_name.id}}Value")
         end
 
         def {{value_name.camelcase(lower: true).id}}Value=(new_val)
@@ -323,7 +204,7 @@ abstract class StimulusController
 
     private class ControllerContext
       def {{name.id}}(*args)
-        forward_call(StringContext, "{{name.id}}", *args)
+        forward_call(JS::StringContext, "{{name.id}}", *args)
       end
     end
 
