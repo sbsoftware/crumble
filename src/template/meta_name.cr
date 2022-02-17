@@ -1,5 +1,6 @@
 enum MetaName
   Viewport
+  Description
 
   def to_s(io)
     io << self.to_s.dasherize
