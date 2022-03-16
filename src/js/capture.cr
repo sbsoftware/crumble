@@ -23,7 +23,6 @@ module JS
         JS.capture {{call_context}}, {{level + 1}}, {{io_name}}, {{locals.splat}} do {{blk.args.size > 0 ? "|#{blk.args.splat}|".id : "".id}}
           {{blk.body.then}}
         end
-        {{io_name.id}} << "\n"
         {{io_name.id}} << "  " * {{level + 1}}
         {{io_name.id}} << "}"
         {% if blk.body.else %}
@@ -31,15 +30,13 @@ module JS
           JS.capture {{call_context}}, {{level + 1}}, {{io_name}}, {{locals.splat}} do {{blk.args.size > 0 ? "|#{blk.args.splat}|".id : "".id}}
             {{blk.body.else}}
           end
-          {{io_name.id}} << "\n"
           {{io_name.id}} << "  " * {{level + 1}}
           {{io_name.id}} << "}"
         {% end %}
-        {{io_name.id}} << "\n"
       {% elsif blk.body.is_a?(Path) %}
         {{io_name.id}} << "  " * {{level + 1}}
         {{io_name.id}} << "\""
-        {{io_name.id}} << {{blk.body}}
+        {{io_name.id}} << JS.resolve_path({{blk.body}})
         {{io_name.id}} << "\""
       {% elsif blk.body.is_a?(Return) %}
         {{io_name.id}} << "  " * {{level + 1}}
@@ -62,36 +59,31 @@ module JS
   end
 
   macro resolve_call(call_context, call, level, *block_args)
-    {% if call.receiver %}
-      {% if call.receiver.is_a?(Expressions) %}
-        JS.resolve_call({{call_context}}, {{call.receiver.expressions.last}}, {{level}}, {{block_args.splat}}).{{call.name}}(*JS.resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
-          String.build do |blockio_{{level}}|
-            JS.capture({{call_context}}, {{level + 1}}, "blockio_{{level}}", {{block_args.splat}}) {{call.block}}
-          end
-        end
-        {% end %}
-      {% elsif call.receiver.is_a?(Call) %}
-        JS.resolve_call({{call_context}}, {{call.receiver}}, {{level}}, {{block_args.splat}}).{{call.name}}(*JS.resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
-          String.build do |blockio_{{level}}|
-            JS.capture({{call_context}}, {{level + 1}}, "blockio_{{level}}", {{block_args.splat}}) {{call.block}}
-          end
-        end
-        {% end %}
+    JS.resolve_receiver({{call_context}}, {{call.receiver || nil}}, {{level}}, {{block_args.splat}}).{{call.name}}(*JS.resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
+      String.build do |blockio_{{level}}|
+        JS.capture({{call_context}}, {{level + 1}}, "blockio_{{level}}", {{block_args.splat}}) {{call.block}}
+      end
+    end
+    {% end %}
+  end
+
+  macro resolve_receiver(call_context, recv, level, *block_args)
+    {% if recv %}
+      {% if recv.is_a?(Expressions) %}
+        JS.resolve_call({{call_context}}, {{recv.expressions.last}}, {{level}}, {{block_args.splat}})
+      {% elsif recv.is_a?(Call) %}
+        JS.resolve_call({{call_context}}, {{recv}}, {{level}}, {{block_args.splat}})
+      {% elsif recv.is_a?(Path) %}
+        JS.resolve_path({{recv}})
+      {% elsif block_args.includes?(recv) %}
+        {{recv}}
+      {% elsif recv.is_a?(NumberLiteral) %}
+        JS::NumberContext.new({{recv.stringify}})
       {% else %}
-        {% if block_args.includes?(call.receiver) %}
-          {{call.receiver}}.{{call.name}}(*JS.resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}}))
-        {% elsif call.receiver.is_a?(Path) %}
-          {{call}}
-        {% else %}
-          {{call_context}}.new.{{call.receiver}}.{{call.name}}(*JS.resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}})) {% if call.block %} do {{call.block.args.size > 0 ? "|#{call.block.args.splat}|".id : "".id}}
-            String.build do |blockio_{{level}}|
-              JS.capture({{call_context}}, {{level + 1}}, "blockio_{{level}}") {{call.block}}
-            end
-          end {% end %}
-        {% end %}
+        {{call_context}}.new.{{recv}}
       {% end %}
     {% else %}
-      {{call_context}}.new.{{call.name}}(*JS.resolve_call_args({{call_context}}, {{call}}, {{level}}, {{block_args.splat}}))
+      {{call_context}}.new
     {% end %}
   end
 
@@ -114,6 +106,14 @@ module JS
       {{arg.stringify}}
     {% else %}
       {{arg}}
+    {% end %}
+  end
+
+  macro resolve_path(path)
+    {% if path.resolve? %}
+      {{path}}
+    {% else %}
+      JS::{{path}}Context.new
     {% end %}
   end
 end
