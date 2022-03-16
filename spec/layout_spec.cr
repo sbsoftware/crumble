@@ -8,7 +8,7 @@ class TestLayout < Template
   end
 
   template do
-    "<!doctype html>"
+    doctype
     html do
       head do
         title do
@@ -32,15 +32,9 @@ end
 
 expected_html = <<-HTML
   <!doctype html>
-  <html>
-  <head>
-  <title>
-  Test</title>
+  <html><head><title>Test</title>
   </head>
-  <body>
-  <p>
-  Test
-  </p>
+  <body><p>Test</p>
   </body>
   </html>
 
