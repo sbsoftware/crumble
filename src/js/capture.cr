@@ -49,6 +49,26 @@ module JS
         {{io_name.id}} << JS.resolve_call({{call_context}}, {{blk.body.receiver}}, {{level}})
       {% elsif blk.body.is_a?(Var) %}
         {{io_name.id}} << {{blk.body}}
+      {% elsif blk.body.is_a?(Assign) %}
+        {{io_name.id}} << "var "
+        {{io_name.id}} << {{blk.body.target.stringify}}
+        {{io_name.id}} << " = "
+        JS.capture({{call_context}}, -1, {{io_name}}, {{locals.splat(", ")}}{{blk.args.splat}}) do
+          {{blk.body.value}}
+        end
+        {{io_name.id}} << "\n"
+        {% if blk.body.value.is_a?(Call) %}
+          {{blk.body.target}} = JS.resolve_call({{call_context}}, {{blk.body.value}}, {{level}}, {{blk.args.splat}})
+          if {{blk.body.target}}.responds_to?(:rename)
+            {{blk.body.target}} = {{blk.body.target}}.rename({{blk.body.target.stringify}})
+          end
+        {% else %}
+          {{blk.body}}
+        {% end %}
+      {% elsif blk.body.is_a?(StringLiteral) %}
+        {{io_name.id}} << "\""
+        {{io_name.id}} << {{blk.body}}
+        {{io_name.id}} << "\""
       {% elsif blk.body.is_a?(Nop) %}
         # do nothing
       {% else %}
@@ -75,7 +95,7 @@ module JS
         JS.resolve_call({{call_context}}, {{recv}}, {{level}}, {{block_args.splat}})
       {% elsif recv.is_a?(Path) %}
         JS.resolve_path({{recv}})
-      {% elsif block_args.includes?(recv) %}
+      {% elsif block_args.includes?(recv) || recv.is_a?(Var) %}
         {{recv}}
       {% elsif recv.is_a?(NumberLiteral) %}
         JS::NumberContext.new({{recv.stringify}})
@@ -103,6 +123,8 @@ module JS
         JS.resolve_call({{call_context}}, {{arg}}, 0, {{block_args.splat}})
       {% end %}
     {% elsif arg.is_a?(StringLiteral) %}
+      {{arg.stringify}}
+    {% elsif arg.is_a?(Var) %}
       {{arg.stringify}}
     {% else %}
       {{arg}}

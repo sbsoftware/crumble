@@ -59,5 +59,10 @@ module JS
         jso << "}"
       end
     end
+
+    def rename(new_name)
+      @receiver = new_name
+      self
+    end
   end
 end
