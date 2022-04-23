@@ -11,6 +11,10 @@ module JS
       resolve_attr("innerHTML")
     end
 
+    def outerHTML=(new_html)
+      resolve_assignment("outerHTML", new_html)
+    end
+
     def classList
       forward(ClassListContext, "classList")
     end

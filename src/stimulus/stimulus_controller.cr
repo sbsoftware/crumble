@@ -130,6 +130,10 @@ abstract class StimulusController
     def dispatch(event : JavascriptEvent.class, target : JS::CallContext)
       resolve_call("dispatch", event.to_s.dump, {target: target, prefix: NullContext})
     end
+
+    def element
+      forward(JS::ElementContext, "element")
+    end
   end
 
   @@targets = Targets.new

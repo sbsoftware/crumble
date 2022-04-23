@@ -25,6 +25,10 @@ module JS
       ctx_class.new(resolve_call(next_receiver, *args))
     end
 
+    def forward_new(ctx_class, next_receiver, *args)
+      ctx_class.new("new #{next_receiver}(#{args.join(", ")})")
+    end
+
     def to_s(io : IO)
       io << @receiver
     end
