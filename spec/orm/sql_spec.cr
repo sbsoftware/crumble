@@ -1,4 +1,4 @@
-require "./spec_helper"
+require "../spec_helper"
 
 class FakeDB
   @@queries = [] of String
@@ -50,7 +50,7 @@ class FakeResult
   end
 end
 
-class MyModel < Crumble::ORM
+class MyModel < Crumble::ORM::Base
   id_column id : Int64?
   column name : String?
 
