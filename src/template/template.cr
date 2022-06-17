@@ -74,7 +74,12 @@ class Template
             capture_elems {{blk.body.block}}
           end
         {% else %}
-          __tplio__ << {{blk.body}}
+          %call = {{blk.body}}
+          if %call.is_a?(Crumble::ORM::Attribute)
+            __tplio__ << %call.value
+          else
+            __tplio__ << %call
+          end
         {% end %}
       {% end %}
     {% elsif blk.body.is_a?(StringLiteral) %}

@@ -1,5 +1,29 @@
+module ToSql
+  def to_sql_where_condition(io : IO)
+    sql_eq_operator(io)
+    to_sql_value(io)
+  end
+
+  def to_sql_update_value(io : IO)
+    io << "="
+    to_sql_value(io)
+  end
+
+  def to_sql_insert_value(io : IO)
+    to_sql_value(io)
+  end
+
+  abstract def to_sql_value(io : IO)
+
+  def sql_eq_operator(io : IO)
+    io << "="
+  end
+end
+
 class String
-  def to_sql_val(io : IO)
+  include ToSql
+
+  def to_sql_value(io : IO)
     io << "'"
     io << self
     io << "'"
@@ -7,19 +31,25 @@ class String
 end
 
 struct Int32
-  def to_sql_val(io : IO)
+  include ToSql
+
+  def to_sql_value(io : IO)
     io << self
   end
 end
 
 struct Int64
-  def to_sql_val(io : IO)
+  include ToSql
+
+  def to_sql_value(io : IO)
     io << self
   end
 end
 
 struct Bool
-  def to_sql_val(io : IO)
+  include ToSql
+
+  def to_sql_value(io : IO)
     if self
       io << "TRUE"
     else
@@ -29,9 +59,23 @@ struct Bool
 end
 
 struct Time
-  def to_sql_val(io : IO)
+  include ToSql
+
+  def to_sql_value(io : IO)
     io << "'"
     io << self
     io << "'"
+  end
+end
+
+struct Nil
+  include ToSql
+
+  def to_sql_value(io : IO)
+    io << "NULL"
+  end
+
+  def sql_eq_operator(io : IO)
+    io << " IS "
   end
 end

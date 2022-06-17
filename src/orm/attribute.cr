@@ -1,11 +1,11 @@
 module Crumble::ORM
-  abstract class Attribute
+  class Attribute(T)
     getter name : Symbol
+    property value : T
 
-    def initialize(@name)
-    end
+    delegate :to_sql_where_condition, :to_sql_update_value, :to_sql_insert_value, to: value
 
-    abstract def value
+    def initialize(@name, @value = nil); end
 
     def html_attr_key
       "data-crumble-attr-#{name}"

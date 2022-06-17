@@ -9,12 +9,12 @@ class FakeDB
 
   def self.query_one(query)
     @@queries << query
-    yield FakeResult.new([{"id" => 123_i64, "name" => "Stefanie", "age" => 18} of String => DB::Any])
+    yield FakeResult.new([{"id" => 123_i64, "name" => "Stefanie"} of String => DB::Any])
   end
 
   def self.query(query)
     @@queries << query
-    yield FakeResult.new([{"id" => 122_i64, "name" => "Lulu", "age" => 22} of String => DB::Any])
+    yield FakeResult.new([{"id" => 122_i64, "name" => "Lulu"} of String => DB::Any])
   end
 
   def self.exec(query)

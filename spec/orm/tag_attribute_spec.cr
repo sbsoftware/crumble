@@ -9,6 +9,12 @@ class TagAttributeModel < Crumble::ORM::Base
       div name
     end
   end
+
+  template :content_view do
+    div do
+      name
+    end
+  end
 end
 
 describe "TagAttributeModel" do
@@ -24,6 +30,19 @@ describe "TagAttributeModel" do
       mdl.id = 265
       mdl.name = "Carl"
       mdl.default_view.to_s.should eq(expected_html)
+    end
+  end
+
+  describe "including attributes as tag content" do
+    it "produces the correct HTML" do
+      expected_html = <<-HTML
+      <div>Bettany</div>
+
+      HTML
+
+      mdl = TagAttributeModel.new
+      mdl.name = "Bettany"
+      mdl.content_view.to_s.should eq(expected_html)
     end
   end
 end

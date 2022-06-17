@@ -1,6 +1,6 @@
 require "db"
 require "pg"
-require "./to_sql_val.cr"
+require "./*"
 
 module Crumble::ORM
   abstract class Base
@@ -20,16 +20,14 @@ module Crumble::ORM
     end
 
     macro _column(type_decl)
-      getter {{type_decl.var}} : Crumble::ORM::{{type_decl.type.resolve.union_types.select { |t| t != Nil }.first}}Attribute = Crumble::ORM::{{type_decl.type.resolve.union_types.select { |t| t != Nil }.first}}Attribute.new({{type_decl.var.symbolize}})
+      getter {{type_decl.var}} : Crumble::ORM::Attribute({{type_decl.type}}) = Crumble::ORM::Attribute({{type_decl.type}}).new({{[type_decl.var.symbolize, type_decl.value].splat}})
 
       def {{type_decl.var}}=(new_val)
         {{type_decl.var}}.value = new_val
       end
 
       def self.{{type_decl.var}}(value)
-        Crumble::ORM::{{type_decl.type.resolve.union_types.select { |t| t != Nil }.first}}Attribute.new({{type_decl.var.symbolize}}).tap do |att|
-          att.value = value
-        end
+        Crumble::ORM::Attribute({{type_decl.type}}).new({{type_decl.var.symbolize}}, value)
       end
     end
 
@@ -67,12 +65,7 @@ module Crumble::ORM
       String.build do |str|
         conditions.each_with_index do |(col, val), i|
           str << col
-          if val.nil?
-            str << " IS NULL"
-          else
-            str << "="
-            val.to_sql_val(str)
-          end
+          val.to_sql_where_condition(str)
           str << " AND " unless i == conditions.size - 1
         end
       end
@@ -104,10 +97,10 @@ module Crumble::ORM
           case column
             {% for model_col in @type.instance_vars.select { |var| var.annotation(Crumble::ORM::Column) || var.annotation(Crumble::ORM::IdColumn) } %}
               when {{model_col.name.stringify}}
-                {{model_col.name}} = res.read({{model_col.type}}::COLUMN_TYPE)
+                self.{{model_col.name}} = res.read(typeof(@{{model_col.name}}.value))
             {% end %}
           else
-            # ignore
+            puts "Unknown column name #{column}"
           end
         {% end %}
       end
@@ -129,12 +122,7 @@ module Crumble::ORM
         qry << " SET "
         column_values.to_h.join(qry, ", ") do |(k, v), io|
           io << k
-          io << "="
-          if v.nil?
-            io << "NULL"
-          else
-            v.to_sql_val(io)
-          end
+          v.to_sql_update_value(io)
         end
         qry << " WHERE id="
         qry << id.value
@@ -149,7 +137,7 @@ module Crumble::ORM
         qry << "("
         column_values.keys.join(qry, ", ")
         qry << ") VALUES ("
-        column_values.values.join(qry, ", ") { |v, io| v.nil? ? (io << "NULL") : v.to_sql_val(io) }
+        column_values.values.join(qry, ", ") { |v, io| v.to_sql_insert_value(io) }
         qry << ")"
       end
       db.exec query

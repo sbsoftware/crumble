@@ -180,6 +180,10 @@ abstract class StimulusController
 
   macro values(*values)
     {% for value_name in values %}
+      def self.{{value_name.id}}_value(value_attr : Crumble::ORM::Attribute)
+        Value.new(self, {{value_name.id.stringify}}, value_attr.value)
+      end
+
       def self.{{value_name.id}}_value(value)
         Value.new(self, {{value_name.id.stringify}}, value)
       end
