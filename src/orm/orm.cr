@@ -31,6 +31,12 @@ module Crumble::ORM
       end
     end
 
+    macro has_many_of(klass)
+      def {{klass.resolve.name.underscore.gsub(/::/, "_").id}}s
+        {{klass}}.where({"{{@type.name.underscore.gsub(/::/, "_").id}}_id" => id})
+      end
+    end
+
     def self.db
       return @@db.not_nil! if @@db
 
@@ -42,7 +48,7 @@ module Crumble::ORM
     end
 
     def self.table_name
-      "#{name.underscore}s"
+      {{ @type.name.underscore.gsub(/::/, "_").stringify + "s"}}
     end
 
     def table_name
