@@ -5,6 +5,7 @@ require "./*"
 module Crumble::ORM
   abstract class Base
     @@db : DB::Database?
+    @@observers = [] of Proc(self, Nil)
 
     annotation Crumble::ORM::IdColumn; end
     annotation Crumble::ORM::Column; end
@@ -41,6 +42,20 @@ module Crumble::ORM
       return @@db.not_nil! if @@db
 
       @@db = DB.open(ENV.fetch("DATABASE_URL", "postgres://postgres@localhost/postgres"))
+    end
+
+    def self.add_observer(&block : Crumble::ORM::Base -> Nil)
+      @@observers << block
+    end
+
+    def self.notify_observers(instance)
+      @@observers.each do |observer|
+        observer.call(instance)
+      end
+    end
+
+    def notify_observers
+      self.class.notify_observers(self)
     end
 
     def db
@@ -119,6 +134,7 @@ module Crumble::ORM
       else
         insert_record
       end
+      notify_observers
     end
 
     def update_record
