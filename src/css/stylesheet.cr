@@ -199,6 +199,14 @@ module CSS
       prop("text-align", CSS::TextAlign::{{ta}})
     end
 
+    macro float(f)
+      prop("float", CSS::Float::{{f}})
+    end
+
+    macro clear(c)
+      prop("clear", CSS::Clear::{{c}})
+    end
+
     macro maxWidth(mw)
       prop("max-width", {{mw}})
     end
