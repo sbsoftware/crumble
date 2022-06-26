@@ -151,6 +151,22 @@ module CSS
       prop("padding", padding_value({{p.splat}}))
     end
 
+    macro paddingLeft(pl)
+      prop("padding-left", {{pl}})
+    end
+
+    macro paddingRight(pr)
+      prop("padding-right", {{pr}})
+    end
+
+    macro paddingTop(pt)
+      prop("padding-top", {{pt}})
+    end
+
+    macro paddingBottom(pb)
+      prop("padding-bottom", {{pb}})
+    end
+
     macro margin(m)
       prop("margin", {{m}})
     end
