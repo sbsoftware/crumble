@@ -69,7 +69,11 @@ module CSS
         {% elsif sel.receiver && sel.name.stringify == "&" %}
           CSS::CombinedSelector.new(make_selector({{sel.receiver}}), make_selector({{sel.args.first}}))
         {% elsif sel.receiver && sel.name.stringify == "<=" %}
-          CSS::PseudoclassSelector.new(make_selector({{sel.receiver}}), CSS::Pseudoclass::{{sel.args.first}})
+          {% if sel.args.first.is_a?(Path) %}
+            CSS::PseudoclassSelector.new(make_selector({{sel.receiver}}), CSS::Pseudoclass::{{sel.args.first}})
+          {% else %}
+            CSS::PseudoclassSelector.new(make_selector({{sel.receiver}}), {{sel.args.first}})
+          {% end %}
         {% else %}
           {{sel}}.selector
         {% end %}

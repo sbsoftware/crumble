@@ -1,10 +1,11 @@
 require "./selector"
 require "./pseudoclass"
+require "./nth_of_type"
 
 module CSS
   class PseudoclassSelector < Selector
     @element_selector : Selector
-    @pseudoclass : CSS::Pseudoclass
+    @pseudoclass : CSS::Pseudoclass | CSS::NthOfType
 
     def initialize(@element_selector, @pseudoclass)
     end
