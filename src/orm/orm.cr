@@ -168,5 +168,7 @@ module Crumble::ORM
     macro column_values
       { {{@type.instance_vars.select { |var| var.annotation(Crumble::ORM::Column) }.map { |var| "#{var.name}: @#{var.name}.value".id }.splat}} }
     end
+
+    abstract def id
   end
 end
