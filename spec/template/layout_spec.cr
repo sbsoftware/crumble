@@ -1,4 +1,4 @@
-require "./spec_helper"
+require "../spec_helper"
 
 class TestLayout < Template
   getter page_title : String
