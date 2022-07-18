@@ -7,16 +7,12 @@ module Crumble::ORM
 
     def initialize(@name, @value = nil); end
 
-    def html_attr_key
-      "data-crumble-attr-#{name}"
-    end
-
-    def html_attr_value(io)
-      io << value.to_s
+    def to_tag_attr
+      {"data-crumble-attr-#{name}", value}
     end
 
     def selector
-      CSS::AttrSelector.new(html_attr_key, value.to_s)
+      CSS::AttrSelector.new(to_tag_attr.first, value.to_s)
     end
   end
 end

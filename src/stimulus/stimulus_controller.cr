@@ -28,12 +28,8 @@ end
 
 abstract class StimulusController
   record Target, controller : StimulusController.class, name : String do
-    def html_attr_key
-      "data-#{controller.controller_name}-target"
-    end
-
-    def html_attr_value(io)
-      io << name
+    def to_tag_attr
+      {"data-#{controller.controller_name}-target", name}
     end
   end
 
@@ -54,16 +50,12 @@ abstract class StimulusController
   end
 
   record Value, controller : StimulusController.class, name : String, value : String | Bool do
-    def html_attr_key
-      "data-#{controller.controller_name}-#{name}-value"
-    end
-
-    def html_attr_value(io)
-      io << value
+    def to_tag_attr
+      {"data-#{controller.controller_name}-#{name}-value", value}
     end
 
     def selector
-      CSS::AttrSelector.new(html_attr_key, value.to_s)
+      CSS::AttrSelector.new(to_tag_attr.first, value.to_s)
     end
   end
 
@@ -106,16 +98,14 @@ abstract class StimulusController
   end
 
   record Action, event : JavascriptEvent.class, controller : StimulusController.class, method : Method do
-    def html_attr_key
-      "data-action"
-    end
-
-    def html_attr_value(io)
-      io << event
-      io << "->"
-      io << controller.controller_name
-      io << "#"
-      io << method.name
+    def to_tag_attr
+      {"data-action", -> (io : IO) {
+        io << event
+        io << "->"
+        io << controller.controller_name
+        io << "#"
+        io << method.name
+      }}
     end
   end
 
@@ -227,19 +217,15 @@ abstract class StimulusController
     self.name.chomp("Controller").gsub("::", "--").dasherize
   end
 
-  def self.html_attr_key
-    "data-controller"
-  end
-
-  def self.html_attr_value(io)
-    io << self.controller_name
+  def self.to_tag_attr
+    {"data-controller", self.controller_name}
   end
 end
 
 class Template
   macro stimulus_include(code)
     capture_elems do
-      script TagAttr.new("type", "module") do
+      script({"type", "module"}) do
         {{code}}
       end
     end

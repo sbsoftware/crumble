@@ -6,16 +6,12 @@ class Template
     Patch
     Delete
 
-    def to_s(io)
-      io << self.to_s.upcase
+    def to_s
+      super.upcase
     end
 
-    def html_attr_key
-      "method"
-    end
-
-    def html_attr_value(io)
-      io << self
+    def to_tag_attr
+      {"method", self}
     end
   end
 end

@@ -1,17 +1,13 @@
 enum Charset
   UTF8
 
-  def to_s(io)
-    io << case self
-          in UTF8 then "utf-8"
-          end
+  def to_s
+    case self
+    in UTF8 then "utf-8"
+    end
   end
 
-  def html_attr_key
-    "charset"
-  end
-
-  def html_attr_value(io)
-    io << self
+  def to_tag_attr
+    {"charset", self}
   end
 end

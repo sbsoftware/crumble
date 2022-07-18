@@ -7,15 +7,11 @@ enum Rel
   Alternate
   MaskIcon
 
-  def to_s(io)
-    io << self.to_s.dasherize
+  def to_s
+    super.dasherize
   end
 
-  def html_attr_key
-    "rel"
-  end
-
-  def html_attr_value(io)
-    io << self
+  def to_tag_attr
+    {"rel", self}
   end
 end

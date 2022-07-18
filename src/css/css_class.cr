@@ -8,12 +8,8 @@ module CSS
       CSS::ClassSelector.new(self)
     end
 
-    def self.html_attr_key
-      "class"
-    end
-
-    def self.html_attr_value(io)
-      io << self
+    def self.to_tag_attr
+      {"class", self}
     end
   end
 end

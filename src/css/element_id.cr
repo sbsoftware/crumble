@@ -8,12 +8,8 @@ module CSS
       CSS::IdSelector.new(self)
     end
 
-    def self.html_attr_key
-      "id"
-    end
-
-    def self.html_attr_value(io)
-      io << self
+    def self.to_tag_attr
+      {"id", self}
     end
   end
 end

@@ -126,11 +126,11 @@ class Template
   end
 
   macro href(value)
-    Href.new({{value}})
+    {"href", {{value}}}
   end
 
   macro action(value)
-    TagAttr.new("action", {{value}})
+    {"action", {{value}}}
   end
 
   macro style(style_class)
@@ -158,16 +158,6 @@ class Template
     io << name
   end
 
-  def tag_begin(io : IO, name : String, arg)
-    io << "<"
-    io << name
-    io << " "
-    io << arg.html_attr_key
-    io << "=\""
-    arg.html_attr_value(io)
-    io << "\""
-  end
-
   def tag_begin(io : IO, name : String, *args)
     io << "<"
     io << name
@@ -176,9 +166,7 @@ class Template
       hash[key] = String::Builder.new
     end
     args.reduce(io_hash) do |attrs, arg|
-      attr_io = attrs[arg.html_attr_key]
-      attr_io << " " unless attr_io.empty?
-      arg.html_attr_value(attr_io)
+      eval_tag_attr(attrs, arg)
       attrs
     end.each do |k, v|
       io << " "
@@ -198,5 +186,19 @@ class Template
     io << "</"
     io << name
     io << ">\n"
+  end
+
+  def eval_tag_attr(attrs, current) : Nil
+    return eval_tag_attr(attrs, current.to_tag_attr) if current.responds_to? :to_tag_attr
+
+    attr_io = attrs[current[0]]
+    attr_io << " " unless attr_io.empty?
+    val = current[1]
+    case val
+    when Proc(IO, IO)
+      val.call(attr_io)
+    else
+      attr_io << val
+    end
   end
 end
