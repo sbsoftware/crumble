@@ -103,17 +103,19 @@ class Template
     end
   end
 
-  {% for tag_name in CONTENT_TAG_NAMES %}
-    macro {{tag_name.id}}(*attrs, &block)
-      tag(__tplio__, {{tag_name}}, \{{attrs.splat}}) \{{block}}
-    end
-  {% end %}
+  macro finished
+    {% for tag_name in CONTENT_TAG_NAMES %}
+      macro {{tag_name.id}}(*attrs, &block)
+        tag(__tplio__, {{tag_name.gsub(/_/, "-")}}, \{{attrs.splat}}) \{{block}}
+      end
+    {% end %}
 
-  {% for tag_name in STANDALONE_TAG_NAMES %}
-    macro {{tag_name.id}}(*attrs)
-      standalone_tag(__tplio__, {{tag_name}}, \{{attrs.splat}})
-    end
-  {% end %}
+    {% for tag_name in STANDALONE_TAG_NAMES %}
+      macro {{tag_name.id}}(*attrs)
+        standalone_tag(__tplio__, {{tag_name.gsub(/_/, "-")}}, \{{attrs.splat}})
+      end
+    {% end %}
+  end
 
   macro doctype(dt = "html")
     __tplio__ << "<!doctype "
