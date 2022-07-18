@@ -40,7 +40,9 @@ module Crumble
         {% end %}
         {% begin %}
           {% for resource_class in Resource.all_subclasses %}
-            next if {{resource_class}}.handle(ctx)
+            {% if !resource_class.abstract? %}
+              next if {{resource_class}}.handle(ctx)
+            {% end %}
           {% end %}
         {% end %}
 
