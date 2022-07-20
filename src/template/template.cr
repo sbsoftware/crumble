@@ -1,5 +1,11 @@
 require "./*"
 
+class IO
+  def <<(a_proc : Proc(IO, Nil))
+    a_proc.call(self)
+  end
+end
+
 macro template(method_name, &blk)
   private class {{method_name.id.stringify.camelcase.id}}Template < Template
     @parent : {{@type}}
@@ -28,7 +34,7 @@ class Template
   CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong i form aside main section header h1 h2 h3 h4 h5 h6 table thead tbody tr td span dl dt dd)
   STANDALONE_TAG_NAMES = %w(meta link img br input)
 
-  alias DockingPoint = String | Template | Nil
+  alias DockingPoint = String | Template | Proc(IO, Nil) | Nil
 
   property main_docking_point : DockingPoint = nil
 
@@ -38,21 +44,21 @@ class Template
   def initialize(@main_docking_point)
   end
 
-  macro capture_elems(&blk)
+  macro capture_elems(io_var = __tplio__, &blk)
     {% if blk %}
       {% if blk.body.is_a?(Expressions) %}
         {% for exp in blk.body.expressions %}
-          eval_exp do
+          eval_exp({{io_var}}) do
             {{exp}}
           end
         {% end %}
       {% else %}
-        eval_exp {{blk}}
+        eval_exp({{io_var}}) {{blk}}
       {% end %}
     {% end %}
   end
 
-  macro eval_exp(&blk)
+  macro eval_exp(io_var = __tplio__, &blk)
     {% if blk.body.is_a?(Call) %}
       {% if (CONTENT_TAG_NAMES + STANDALONE_TAG_NAMES + %w(doctype style template_tag stimulus_include)).includes?(blk.body.name.stringify) && blk.body.receiver.nil? %}
         {% if blk.body.block %}
@@ -63,31 +69,37 @@ class Template
           {% else %}
             {{blk.body.name}}({{blk.body.args.splat}}) do
           {% end %}
-            capture_elems {{blk.body.block}}
+            capture_elems({{io_var}}) {{blk.body.block}}
           end
         {% else %}
           {{blk.body}}
         {% end %}
       {% else %}
         {% if blk.body.block %}
-          {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
-            capture_elems {{blk.body.block}}
-          end
+          {% if blk.body.name.stringify == "within" %}
+            within({{blk.body.args.splat}}) do
+              capture_elems(__withinio__) {{blk.body.block}}
+            end
+          {% else %}
+            {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
+              capture_elems({{io_var}}) {{blk.body.block}}
+            end
+          {% end %}
         {% else %}
           %call = {{blk.body}}
           if %call.is_a?(Crumble::ORM::Attribute)
-            __tplio__ << %call.value
+            {{io_var}} << %call.value
           else
-            __tplio__ << %call
+            {{io_var}} << %call
           end
         {% end %}
       {% end %}
     {% elsif blk.body.is_a?(StringLiteral) %}
-      __tplio__ << {{blk.body}}
+      {{io_var}} << {{blk.body}}
     {% elsif blk.body.is_a?(StringInterpolation) %}
-      __tplio__ << {{blk.body}}
+      {{io_var}} << {{blk.body}}
     {% elsif blk.body.is_a?(Path) || blk.body.is_a?(MacroExpression) || blk.body.is_a?(InstanceVar) || blk.body.is_a?(Var) %}
-      __tplio__ << {{blk.body}}
+      {{io_var}} << {{blk.body}}
     {% elsif blk.body.is_a?(Nop) %}
       # do nothing
     {% else %}
@@ -99,8 +111,20 @@ class Template
 
   macro template(&blk)
     def to_s(__tplio__ : IO)
-      capture_elems {{blk}}
+      capture_elems(__tplio__) {{blk}}
     end
+  end
+
+  macro within(tpl, &blk)
+    {% if tpl.is_a?(Path) %}
+      %tpl = {{tpl}}.new
+    {% else %}
+      %tpl = {{tpl}}
+    {% end %}
+    %tpl.main_docking_point = -> (__withinio__ : IO) : Nil do
+      {{blk.body}}
+    end
+    __tplio__ << %tpl
   end
 
   macro finished
