@@ -38,6 +38,22 @@ module Crumble::ORM
       end
     end
 
+    macro boolean_flip_action(name, attr, &blk)
+      class {{name.capitalize.id}}Action
+        @action : Crumble::ORM::BooleanFlipAction({{@type}})
+
+        delegate :apply, :to_s, :template, to: @action
+
+        def initialize(model)
+          @action = Crumble::ORM::BooleanFlipAction.new(model, {{name.id.stringify}}, -> (m : {{@type}}) { m.{{attr.id}} })
+        end
+      end
+
+      def {{name.id}}_action
+        {{name.capitalize.id}}Action.new(self)
+      end
+    end
+
     def self.db
       return @@db.not_nil! if @@db
 
