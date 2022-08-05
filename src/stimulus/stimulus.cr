@@ -1,6 +1,5 @@
 require "../css/dasherize"
 require "./stimulus_controller"
-require "../stimulus_controllers/*"
 
 puts String.build { |output|
   output << <<-SCRIPT

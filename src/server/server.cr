@@ -28,6 +28,7 @@ module Crumble
         res = ctx.response
 
         next if AssetFile.handle(ctx)
+        next if Crumble::ORM::ActionRegistry.handle(ctx)
 
         {% begin %}
           {% for style_class in CSS::Stylesheet.all_subclasses %}
