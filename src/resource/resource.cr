@@ -127,11 +127,7 @@ abstract class Resource
     !nested?
   end
 
-  def self.html_attr_key
-    "href"
-  end
-
-  def self.html_attr_value(io)
-    io << uri_path
+  def self.to_tag_attr
+    {"href", uri_path}
   end
 end
