@@ -14,6 +14,12 @@ module Crumble
   module Server
     extend self
 
+    REQUEST_HANDLERS = [] of Class.class
+
+    macro add_request_handler(klass)
+      {% REQUEST_HANDLERS << klass %}
+    end
+
     def start
       port = 8080
 
@@ -28,7 +34,11 @@ module Crumble
         res = ctx.response
 
         next if AssetFile.handle(ctx)
-        next if Crumble::ORM::ActionRegistry.handle(ctx)
+        {% begin %}
+          {% for req_handler in REQUEST_HANDLERS %}
+            next if {{req_handler}}.handle(ctx)
+          {% end %}
+        {% end %}
 
         {% begin %}
           {% for style_class in CSS::Stylesheet.all_subclasses %}
