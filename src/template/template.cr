@@ -156,7 +156,7 @@ class Template
   end
 
   macro action(value)
-    {"action", {{value}}}
+    FormAction.new({{value}})
   end
 
   macro style(style_class)
