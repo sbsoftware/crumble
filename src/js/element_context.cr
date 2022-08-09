@@ -22,5 +22,9 @@ module JS
     def dataset
       resolve_attr("dataset")
     end
+
+    def click
+      resolve_call("click")
+    end
   end
 end
