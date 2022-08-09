@@ -38,38 +38,6 @@ module Crumble::ORM
       end
     end
 
-    macro boolean_flip_action(name, attr, &blk)
-      class {{name.capitalize.id}}Action < Crumble::ORM::BooleanFlipAction
-        PATH_MATCHER = /#{Crumble::ORM::Action::URI_PATH_PREFIX}\/{{@type.resolve.name.gsub(/::/, "\\/").underscore.id}}\/(\d+)\/{{name.id}}/
-
-        getter model : {{@type}}
-
-        def initialize(@model); end
-
-        def attribute
-          model.{{attr.id}}
-        end
-
-        def self.model_class : Crumble::ORM::Base.class
-          {{@type.resolve}}
-        end
-
-        def self.path_matcher : Regex
-          PATH_MATCHER
-        end
-
-        def uri_path : String
-          "#{Action::URI_PATH_PREFIX}/{{@type.resolve.name.gsub(/::/, "/").underscore.id}}/#{model.id}/{{name.id}}"
-        end
-      end
-
-      def {{name.id}}_action
-        {{name.capitalize.id}}Action.new(self)
-      end
-
-      Crumble::ORM::ActionRegistry.add({{@type.name}}::{{name.capitalize.id}}Action)
-    end
-
     def self.db
       return @@db.not_nil! if @@db
 
