@@ -16,7 +16,7 @@ end
 describe "using model attribute classes as CSS selector" do
   it "produces the correct CSS" do
     expected_css = <<-CSS
-    [data-crumble-attr-active="true"] {
+    [data-crumble-css-selector-attribute-model-active='true'] {
       background-color: red;
     }
 

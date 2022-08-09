@@ -11,9 +11,9 @@ module CSS
     def to_s(io : IO)
       io << "["
       io << @name
-      io << "=\""
+      io << "='"
       io << @value
-      io << "\"]"
+      io << "']"
     end
   end
 end

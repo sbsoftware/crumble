@@ -21,7 +21,7 @@ describe "TagAttributeModel" do
   describe "referencing attributes in HTML tags" do
     it "produces the correct HTML for no value" do
       expected_html = <<-HTML
-      <div data-crumble-attr-id="265"><div data-crumble-attr-name="Carl"></div>
+      <div data-crumble-tag-attribute-model-id="265"><div data-crumble-tag-attribute-model-name="Carl"></div>
       </div>
 
       HTML

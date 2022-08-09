@@ -21,14 +21,14 @@ module Crumble::ORM
     end
 
     macro _column(type_decl)
-      getter {{type_decl.var}} : Crumble::ORM::Attribute({{type_decl.type}}) = Crumble::ORM::Attribute({{type_decl.type}}).new({{[type_decl.var.symbolize, type_decl.value].splat}})
+      getter {{type_decl.var}} : Crumble::ORM::Attribute({{type_decl.type}}) = Crumble::ORM::Attribute({{type_decl.type}}).new({{@type.resolve}}, {{[type_decl.var.symbolize, type_decl.value].splat}})
 
       def {{type_decl.var}}=(new_val)
         {{type_decl.var}}.value = new_val
       end
 
       def self.{{type_decl.var}}(value)
-        Crumble::ORM::Attribute({{type_decl.type}}).new({{type_decl.var.symbolize}}, value)
+        Crumble::ORM::Attribute({{type_decl.type}}).new({{@type.resolve}}, {{type_decl.var.symbolize}}, value)
       end
     end
 
