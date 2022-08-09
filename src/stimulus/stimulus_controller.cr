@@ -220,6 +220,10 @@ abstract class StimulusController
   def self.to_tag_attr
     {"data-controller", self.controller_name}
   end
+
+  def self.selector
+    CSS::AttrSelector.new("data-controller", self.controller_name)
+  end
 end
 
 class Template
