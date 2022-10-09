@@ -193,7 +193,7 @@ abstract class StimulusController
   end
 
   macro method(name, &blk)
-    method(name, String.build do |codeio|
+    method({{name}}, String.build do |codeio|
       JS.capture ControllerMethodContext, 1, "codeio" {{blk}}
     end)
   end
