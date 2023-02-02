@@ -8,6 +8,10 @@ module Crumble::ORM
 
     def initialize(@model, @name, @value = nil); end
 
+    def value=(new_val : Attribute(T))
+      self.value = new_val.value
+    end
+
     def to_tag_attr
       {"data-crumble-#{model.name.dasherize}-#{name}", value}
     end
