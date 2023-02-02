@@ -153,6 +153,9 @@ module Crumble::ORM
     end
 
     def insert_record
+      {% if @type.instance_vars.any? { |v| v.name == "created_at".id } %}
+        self.created_at = Time.local
+      {% end %}
       query = String.build do |qry|
         qry << "INSERT INTO "
         qry << table_name
