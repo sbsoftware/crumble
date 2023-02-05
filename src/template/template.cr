@@ -80,6 +80,8 @@ class Template
             within({{blk.body.args.splat}}) do
               capture_elems(__withinio__) {{blk.body.block}}
             end
+          {% elsif blk.body.name.stringify == "_extract_blk_call" %}
+            {{blk.body}}
           {% else %}
             {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
               capture_elems({{io_var}}) {{blk.body.block}}
@@ -113,6 +115,20 @@ class Template
     def to_s(__tplio__ : IO)
       capture_elems(__tplio__) {{blk}}
     end
+  end
+
+  macro _extract_blk_call(call_name, &blk)
+    {% if blk.body.is_a?(Expressions) %}
+      {% for exp in blk.body.expressions %}
+        {% if exp.is_a?(Call) && exp.name.id == call_name.id && exp.block %}
+          {{exp.block.body}}
+        {% end %}
+      {% end %}
+    {% else %}
+      {% if blk.body.is_a?(Call) && blk.body.name.id == call_name.id && blk.body.block %}
+        {{blk.body.block.body}}
+      {% end %}
+    {% end %}
   end
 
   macro within(tpl, &blk)
