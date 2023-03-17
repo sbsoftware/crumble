@@ -233,6 +233,13 @@ class Template
   def eval_tag_attr(attrs, current) : Nil
     return eval_tag_attr(attrs, current.to_tag_attr) if current.responds_to? :to_tag_attr
 
+    if current.is_a?(Array)
+      current.each do |attr|
+        eval_tag_attr(attrs, attr)
+      end
+      return
+    end
+
     attr_io = attrs[current[0]]
     attr_io << " " unless attr_io.empty?
     val = current[1]
