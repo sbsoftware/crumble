@@ -172,6 +172,41 @@ module Crumble::ORM
       { {{@type.instance_vars.select { |var| var.annotation(Crumble::ORM::Column) }.map { |var| "#{var.name}: @#{var.name}.value".id }.splat}} }
     end
 
+    def self.ensure_table_exists!
+      db.exec table_creation_sql
+    end
+
+    def self.table_creation_sql
+      String.build do |qry|
+        qry << "CREATE TABLE IF NOT EXISTS "
+        qry << table_name
+        qry << "("
+        db_column_statements.join(qry, ", ")
+        qry << ")"
+      end
+    end
+
+    macro db_column_statements
+      [
+        {% for var in @type.instance_vars.select { |v| v.annotation(Crumble::ORM::IdColumn) } %}
+          "{{var.name.id}} #{db_type_for({{var.type.type_vars.first.union_types.find { |tn| tn != Nil }.id}})} PRIMARY KEY",
+        {% end %}
+        {% for var in @type.instance_vars.select { |v| v.annotation(Crumble::ORM::Column) } %}
+          "{{var.name.id}} #{db_type_for({{var.type.type_vars.first.union_types.find { |tn| tn != Nil }.id}})}",
+        {% end %}
+      ] of String
+    end
+
+    def self.db_type_for(klass)
+      case klass
+      in Int64.class then "BIGSERIAL"
+      in Int32.class then "SERIAL"
+      in String.class then "VARCHAR"
+      in Bool.class then "BOOLEAN"
+      in Time.class then "TIMESTAMP"
+      end
+    end
+
     abstract def id
   end
 end

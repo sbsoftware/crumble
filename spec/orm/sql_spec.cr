@@ -63,4 +63,11 @@ describe "MyModel" do
       end
     end
   end
+
+  describe ".ensure_table_exists!" do
+    it "should execute the correct CREATE TABLE statement" do
+      FakeDB.expect("CREATE TABLE IF NOT EXISTS my_models(id BIGSERIAL PRIMARY KEY, name VARCHAR)")
+      MyModel.ensure_table_exists!
+    end
+  end
 end

@@ -52,6 +52,13 @@ module Crumble
         res.status_code = 404
       end
 
+      unless ENV.fetch("CRUMBLE_ORM_MIGRATION", "").in?(["0", "false"])
+        {% for orm_class in Crumble::ORM::Base.all_subclasses %}
+          puts "Creating table for #{{{orm_class.id}}}"
+          {{orm_class.id}}.ensure_table_exists!
+        {% end %}
+      end
+
       address = server.bind_tcp "0.0.0.0", port
       puts "Listening on http://#{address}"
       server.listen
