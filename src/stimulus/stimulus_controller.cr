@@ -13,6 +13,12 @@ end
 class ClickEvent < JavascriptEvent
 end
 
+class InputEvent < JavascriptEvent
+end
+
+class ChangeEvent < JavascriptEvent
+end
+
 class LoadEvent < JavascriptEvent
 end
 
