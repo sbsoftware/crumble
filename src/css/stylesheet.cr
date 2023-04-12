@@ -239,6 +239,10 @@ module CSS
       prop("box-shadow", "#{{{offset_x}}} #{{{offset_y}}} #{{{blur_radius}}} #{{{spread_radius}}} #{colorValue({{color}})}")
     end
 
+    macro boxSizing(bs)
+      prop("box-sizing", CSS::BoxSizing::{{bs}})
+    end
+
     macro listStyle(ls)
       prop("list-style", CSS::ListStyle::{{ls}})
     end
