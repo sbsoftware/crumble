@@ -1,7 +1,7 @@
 module CSS
   abstract class CSSClass
     def self.to_s(io : IO)
-      io << self.name.dasherize
+      io << self.name.gsub("::", "--").dasherize
     end
 
     def self.selector

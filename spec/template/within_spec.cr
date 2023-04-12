@@ -25,7 +25,7 @@ describe WithinSpec::SomeTemplate do
   it "returns the correct HTML string" do
     expected_html = <<-HTML
     <h1>This is big</h1>
-    <div class="within-spec::some-class"><strong>very big</strong>
+    <div class="within-spec--some-class"><strong>very big</strong>
     </div>
 
     HTML
