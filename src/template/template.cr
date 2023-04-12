@@ -31,6 +31,7 @@ macro template(method_name, &blk)
 end
 
 class Template
+  UTIL_MACROS = %w(_extract_nested_blk)
   CONTENT_TAG_NAMES = %w(html head title script body nav ul li a div p strong i form aside main section header h1 h2 h3 h4 h5 h6 table thead tbody tr td span dl dt dd)
   STANDALONE_TAG_NAMES = %w(meta link img br input)
 
@@ -76,12 +77,12 @@ class Template
         {% end %}
       {% else %}
         {% if blk.body.block %}
-          {% if blk.body.name.stringify == "within" %}
+          {% if UTIL_MACROS.includes?(blk.body.name.stringify) %}
+            {{blk.body}}
+          {% elsif blk.body.name.stringify == "within" %}
             within({{blk.body.args.splat}}) do
               capture_elems(__withinio__) {{blk.body.block}}
             end
-          {% elsif blk.body.name.stringify == "_extract_blk_call" %}
-            {{blk.body}}
           {% else %}
             {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
               capture_elems({{io_var}}) {{blk.body.block}}
@@ -117,7 +118,7 @@ class Template
     end
   end
 
-  macro _extract_blk_call(call_name, &blk)
+  macro _extract_nested_blk(call_name, &blk)
     {% if blk.body.is_a?(Expressions) %}
       {% for exp in blk.body.expressions %}
         {% if exp.is_a?(Call) && exp.name.id == call_name.id && exp.block %}
