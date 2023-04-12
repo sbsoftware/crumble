@@ -17,6 +17,10 @@ module JS
       forward(ConsoleContext, "console")
     end
 
+    def debugger
+      resolve_attr("debugger")
+    end
+
     def fetch(uri, method, headers = {} of String => String)
       forward_call(FetchPromiseContext, "fetch", uri, js_object({method: method, headers: headers}))
     end
