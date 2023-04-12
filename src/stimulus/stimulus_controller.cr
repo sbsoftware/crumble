@@ -37,6 +37,10 @@ abstract class StimulusController
     def to_tag_attr
       {"data-#{controller.controller_name}-target", name}
     end
+
+    def selector
+      CSS::AttrSelector.new(to_tag_attr.first, name)
+    end
   end
 
   class Targets
