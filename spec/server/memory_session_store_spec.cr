@@ -16,6 +16,6 @@ describe Crumble::Server::MemorySessionStore do
     session = MemorySessionStoreTest::MySession.new(session_key, user_id)
     store.set(session)
 
-    store.get(session_key).should be(session)
+    store[session_key].should be(session)
   end
 end

@@ -1,13 +1,17 @@
 require "uuid"
 
 class Crumble::Server::SessionKey
-  @id : UUID
+  getter id : UUID
 
   def initialize(@id)
   end
 
   def self.generate
     new(UUID.random)
+  end
+
+  def ==(other)
+    self.id == other.id
   end
 
   def to_s(io : IO)

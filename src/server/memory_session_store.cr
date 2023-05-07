@@ -9,7 +9,11 @@ class Crumble::Server::MemorySessionStore(S)
     @store = {} of SessionKey => S
   end
 
-  def get(key : SessionKey) : S
+  def has_key?(key : SessionKey) : Bool
+    @store.has_key?(key)
+  end
+
+  def [](key : SessionKey) : S
     @store[key]
   end
 

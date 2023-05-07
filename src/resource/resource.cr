@@ -1,7 +1,7 @@
 require "./resource_path"
 
 abstract class Resource
-  @ctx : HTTP::Server::Context
+  @ctx : Crumble::Server::RequestContext(Crumble::Server::Session)
   getter layout : Template?
 
   def self.handle(ctx)
