@@ -103,6 +103,18 @@ class Template
       {{io_var}} << {{blk.body}}
     {% elsif blk.body.is_a?(Path) || blk.body.is_a?(MacroExpression) || blk.body.is_a?(InstanceVar) || blk.body.is_a?(Var) %}
       {{io_var}} << {{blk.body}}
+    {% elsif blk.body.is_a?(If) %}
+      if {{blk.body.cond}}
+        capture_elems({{io_var}}) do
+          {{blk.body.then}}
+        end
+      {% if blk.body.else %}
+        else
+          capture_elems({{io_var}}) do
+            {{blk.body.else}}
+          end
+      {% end %}
+      end
     {% elsif blk.body.is_a?(Nop) %}
       # do nothing
     {% else %}
