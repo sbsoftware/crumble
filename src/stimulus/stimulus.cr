@@ -1,4 +1,3 @@
-require "../css/dasherize"
 require "./stimulus_controller"
 
 puts String.build { |output|

@@ -1,4 +1,3 @@
-require "./dasherize"
 require "./stylesheet"
 require "./element_id"
 require "./css_class"
