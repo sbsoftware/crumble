@@ -77,16 +77,18 @@ class Template
         {% end %}
       {% else %}
         {% if blk.body.block %}
-          {% if UTIL_MACROS.includes?(blk.body.name.stringify) %}
-            {{blk.body}}
+          {% if blk.body.name.stringify == "each" %}
+            {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
+              capture_elems({{io_var}}) {{blk.body.block}}
+            end
           {% elsif blk.body.name.stringify == "within" %}
             within({{blk.body.args.splat}}) do
               capture_elems(__withinio__) {{blk.body.block}}
             end
+          {% elsif UTIL_MACROS.includes?(blk.body.name.stringify) %}
+            {{blk.body}}
           {% else %}
-            {{blk.body.receiver}}.{{blk.body.name}} do |{{blk.body.block.args.splat}}|
-              capture_elems({{io_var}}) {{blk.body.block}}
-            end
+            {{io_var}} << {{blk.body}}
           {% end %}
         {% else %}
           %call = {{blk.body}}
