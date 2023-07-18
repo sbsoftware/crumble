@@ -43,6 +43,20 @@ module CSS
         __rulesio__ << ") {\n"
         capture_rules({{level + 1}}) {{blk.body.block}}
         __rulesio__ << "}\n"
+      {% elsif blk.body.name.stringify == "font_face" && level == 0 %}
+        __rulesio__ << "@font-face {\n"
+        {% if blk.body.block.body.is_a?(Expressions) %}
+          {% for exp in blk.body.block.body.expressions %}
+            __rulesio__ << " " * {{(level + 1) * 2}}
+            __rulesio__ << {{exp}}
+            __rulesio__ << ";\n"
+          {% end %}
+        {% else %}
+          __rulesio__ << " " * {{(level + 1) * 2}}
+          __rulesio__ << {{blk.body.block.body}}
+          __rulesio__ << ";\n"
+        {% end %}
+        __rulesio__ << "}\n"
       {% else %}
         __rulesio__ << " " * {{level}} * 2
         __rulesio__ << make_selector({{blk.body.args.splat}})
@@ -211,7 +225,7 @@ module CSS
     end
 
     macro fontFamily(ff)
-      prop("font-family", {{ff}})
+      prop("font-family", {{ff.stringify}})
     end
 
     macro fontSize(fs)
@@ -300,6 +314,14 @@ module CSS
 
     macro border_value(size, style, color)
       "#{{{size}}} #{CSS::BorderStyle::{{style}}} #{colorValue({{color}})}"
+    end
+
+    macro url(str)
+      "url(\"#{{{str}}}\")"
+    end
+
+    macro src(s)
+      prop("src", {{s}})
     end
 
     macro prop(name, value)
