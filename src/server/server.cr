@@ -29,7 +29,7 @@ module Crumble
       request_handler = RootRequestHandler.new(MemorySessionStore(Crumble::Server::Session).new)
       server = HTTP::Server.new([LogHandler.new, request_handler])
 
-      unless ENV.fetch("CRUMBLE_ORM_MIGRATION", "").in?(["0", "false"])
+      if ENV.fetch("CRUMBLE_ORM_MIGRATION", "").in?(["1", "true"])
         {% for orm_class in Crumble::ORM::Base.all_subclasses %}
           puts "Creating table for #{{{orm_class.id}}}"
           {{orm_class.id}}.ensure_table_exists!
