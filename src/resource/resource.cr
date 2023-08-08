@@ -97,10 +97,10 @@ abstract class Resource
   end
 
   def render(tpl)
-    layout = @layout
-    if layout.is_a?(Template)
-      layout.main_docking_point = tpl
-      @ctx.response.print layout
+    _layout = layout
+    if _layout.is_a?(Template)
+      _layout.main_docking_point = tpl
+      @ctx.response.print _layout
     else
       @ctx.response.print tpl
     end
