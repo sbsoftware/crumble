@@ -15,8 +15,8 @@ class Crumble::Server::RootRequestHandler(S)
   def initialize(@session_store)
   end
 
-  def call(original_ctx : HTTP::Server::Context)
-    ctx = RequestContext.new(session_store, original_ctx)
+  def call(context : HTTP::Server::Context)
+    ctx = RequestContext.new(session_store, context)
 
     return if AssetFile.handle(ctx)
 

@@ -3,12 +3,12 @@ require "http/server/handler"
 class LogHandler
   include HTTP::Handler
 
-  def call(ctx)
-    puts request_details(ctx.request) + " Started"
+  def call(context)
+    puts request_details(context.request) + " Started"
     duration = Time.measure do
-      call_next(ctx)
+      call_next(context)
     end
-    puts request_details(ctx.request) + " Completed #{ctx.response.status_code} (#{duration.total_seconds.humanize(precision: 2)}s)"
+    puts request_details(context.request) + " Completed #{context.response.status_code} (#{duration.total_seconds.humanize(precision: 2)}s)"
   end
 
   private def request_details(req)
