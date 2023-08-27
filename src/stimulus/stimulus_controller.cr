@@ -1,5 +1,4 @@
 require "../asset_file"
-require "../template"
 require "../js/*"
 
 StimulusFile = JavascriptFile.register "assets/stimulus.js", "#{__DIR__}/../../assets/stimulus.js"
@@ -38,12 +37,16 @@ abstract class StimulusController
   @@stimulus_file : AssetFile = StimulusFile
 
   record Target, controller : StimulusController.class, name : String do
-    def to_tag_attr
-      {"data-#{controller.controller_name}-target", name}
+    def to_html_attrs(_tag, attrs)
+      attrs[html_attr_name] = name
     end
 
     def selector
-      CSS::AttrSelector.new(to_tag_attr.first, name)
+      CSS::AttrSelector.new(html_attr_name, name)
+    end
+
+    private def html_attr_name
+      "data-#{controller.controller_name}-target"
     end
   end
 
@@ -64,12 +67,16 @@ abstract class StimulusController
   end
 
   record Value, controller : StimulusController.class, name : String, value : String | Bool do
-    def to_tag_attr
-      {"data-#{controller.controller_name}-#{name}-value", value}
+    def to_html_attrs(_tag, attrs)
+      attrs[html_attr_name] = value
     end
 
     def selector
-      CSS::AttrSelector.new(to_tag_attr.first, value.to_s)
+      CSS::AttrSelector.new(html_attr_name, value.to_s)
+    end
+
+    private def html_attr_name
+      "data-#{controller.controller_name}-#{name}-value"
     end
   end
 
@@ -112,14 +119,8 @@ abstract class StimulusController
   end
 
   record Action, event : JavascriptEvent.class, controller : StimulusController.class, method : Method do
-    def to_tag_attr
-      {"data-action", -> (io : IO) {
-        io << event
-        io << "->"
-        io << controller.controller_name
-        io << "#"
-        io << method.name
-      }}
+    def to_html_attrs(_tag, attrs)
+      attrs["data-action"] = "#{event}->#{controller.controller_name}##{method.name}"
     end
   end
 
@@ -235,21 +236,15 @@ abstract class StimulusController
     self.name.chomp("Controller").gsub("::", "--").dasherize
   end
 
-  def self.to_tag_attr
-    {"data-controller", self.controller_name}
+  def self.to_html_attrs(_tag, attrs)
+    attrs[html_attr_name] = self.controller_name
   end
 
   def self.selector
-    CSS::AttrSelector.new("data-controller", self.controller_name)
+    CSS::AttrSelector.new(html_attr_name, self.controller_name)
   end
-end
 
-class Template
-  macro stimulus_include(code)
-    capture_elems do
-      script({"type", "module"}) do
-        {{code}}
-      end
-    end
+  private def html_attr_name
+    "data-controller"
   end
 end

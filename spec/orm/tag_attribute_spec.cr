@@ -21,15 +21,13 @@ describe "TagAttributeModel" do
   describe "referencing attributes in HTML tags" do
     it "produces the correct HTML for no value" do
       expected_html = <<-HTML
-      <div data-crumble-tag-attribute-model-id="265"><div data-crumble-tag-attribute-model-name="Carl"></div>
-      </div>
-
+      <div data-crumble-tag-attribute-model-id="265"><div data-crumble-tag-attribute-model-name="Carl"></div></div>
       HTML
 
       mdl = TagAttributeModel.new
       mdl.id = 265
       mdl.name = "Carl"
-      mdl.default_view.to_s.should eq(expected_html)
+      mdl.default_view.to_html.should eq(expected_html)
     end
   end
 
@@ -37,12 +35,11 @@ describe "TagAttributeModel" do
     it "produces the correct HTML" do
       expected_html = <<-HTML
       <div>Bettany</div>
-
       HTML
 
       mdl = TagAttributeModel.new
       mdl.name = "Bettany"
-      mdl.content_view.to_s.should eq(expected_html)
+      mdl.content_view.to_html.should eq(expected_html)
     end
   end
 end

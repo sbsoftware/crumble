@@ -4,6 +4,8 @@ version: 0.10.1
 dependencies:
   pg:
     github: will/crystal-pg
+  to_html:
+    github: sbsoftware/to_html.cr
 
 targets:
   crumble:

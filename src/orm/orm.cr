@@ -1,5 +1,6 @@
 require "db"
 require "pg"
+require "to_html"
 require "./*"
 
 module Crumble::ORM
@@ -35,6 +36,23 @@ module Crumble::ORM
     macro has_many_of(klass)
       def {{klass.resolve.name.underscore.gsub(/::/, "_").id}}s
         {{klass}}.where({"{{@type.name.underscore.gsub(/::/, "_").id}}_id" => id})
+      end
+    end
+
+    macro template(name, &blk)
+      private class {{name.id.stringify.camelcase.id}}Template
+        @parent : {{@type}}
+
+        forward_missing_to @parent
+
+        def initialize(@parent)
+        end
+
+        ToHtml.instance_template {{blk}}
+      end
+
+      def {{name.id}}
+        {{name.id.stringify.camelcase.id}}Template.new(self)
       end
     end
 

@@ -12,12 +12,20 @@ module Crumble::ORM
       self.value = new_val.value
     end
 
-    def to_tag_attr
-      {"data-crumble-#{model.name.dasherize}-#{name}", value}
+    def to_html_attrs(_tag, attrs)
+      attrs[html_attr_name] = value.to_s
     end
 
     def selector
-      CSS::AttrSelector.new(to_tag_attr.first, value.to_s)
+      CSS::AttrSelector.new(html_attr_name, value.to_s)
+    end
+
+    private def html_attr_name
+      "data-crumble-#{model.name.dasherize}-#{name}"
+    end
+
+    def to_s(io)
+      io << value
     end
   end
 end

@@ -2,7 +2,6 @@ require "./resource_path"
 
 abstract class Resource
   @ctx : Crumble::Server::RequestContext(Crumble::Server::Session)
-  getter layout : Template?
 
   def self.handle(ctx)
     return false if match(ctx.request.path).nil?
@@ -81,16 +80,19 @@ abstract class Resource
   end
 
   def initialize(@ctx)
-    layout_cls = layout_class
-    if layout_cls.is_a?(Template.class)
-      @layout = layout_cls.new.tap do |layout|
-        layout_config(layout)
-      end
-    end
   end
 
   def layout_class
     nil
+  end
+
+  def layout
+    layout_cls = layout_class
+    if layout_cls
+      layout_cls.new.tap do |layout|
+        layout_config(layout)
+      end
+    end
   end
 
   def layout_config(layout)
@@ -98,12 +100,16 @@ abstract class Resource
 
   def render(tpl)
     _layout = layout
-    if _layout.is_a?(Template)
-      _layout.main_docking_point = tpl
-      @ctx.response.print _layout
+    if _layout
+      layout.to_html(@ctx.response) do |io, indent_level|
+        tpl.to_html(io, indent_level)
+      end
     else
       @ctx.response.print tpl
     end
+  end
+
+  def print_to_response(tpl)
   end
 
   def index
@@ -127,7 +133,7 @@ abstract class Resource
     !nested?
   end
 
-  def self.to_tag_attr
-    {"href", uri_path}
+  def self.to_html_attrs(_tag, attrs)
+    attrs["href"] = uri_path
   end
 end

@@ -1,5 +1,4 @@
 require "../asset_file/css_file"
-require "../template"
 require "./*"
 
 module CSS
@@ -79,7 +78,7 @@ module CSS
       {% elsif sel.is_a?(Path) %}
         {{sel}}.selector
       {% elsif sel.is_a?(Call) %}
-        {% if (Template::CONTENT_TAG_NAMES + Template::STANDALONE_TAG_NAMES).includes?(sel.id.stringify) %}
+        {% if CSS::HTML_TAG_NAMES.includes?(sel.id.stringify) %}
           CSS::TagSelector.new({{sel.id.stringify}})
         {% elsif sel.id.stringify == "any" %}
           CSS::AnySelector.new

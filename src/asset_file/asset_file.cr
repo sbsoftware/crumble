@@ -42,8 +42,8 @@ class AssetFile
     "application/octet-stream"
   end
 
-  def to_tag_attr
-    {"src", uri_path}
+  def to_html_attrs(_tag, attrs)
+    attrs["src"] = uri_path
   end
 
   def to_s(io : IO)
