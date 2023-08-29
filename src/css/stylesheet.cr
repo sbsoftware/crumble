@@ -1,9 +1,20 @@
+require "../asset_file/css_file"
 require "../template"
 require "./*"
 
 module CSS
   abstract class Stylesheet
-    @@rules = {} of CSS::Selector => String
+    def self.asset_file
+      @@asset_file
+    end
+
+    macro inherited
+      @@asset_file = CssFile.new("/styles/#{self.name.underscore.gsub("::", "__")}.css", self.to_s)
+    end
+
+    def self.uri_path
+      asset_file.uri_path
+    end
 
     macro rules(&blk)
       def self.to_s(__rulesio__ : IO)
@@ -309,10 +320,6 @@ module CSS
 
     def self.padding_value(val1, val2, val3, val4)
       "#{val1} #{val2} #{val3} #{val4}"
-    end
-
-    def self.uri_path
-      "/styles/#{self.name.underscore.gsub("::", "__")}.css"
     end
   end
 end

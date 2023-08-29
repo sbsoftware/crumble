@@ -41,15 +41,6 @@ module Crumble
         {% end %}
 
         {% begin %}
-          {% for style_class in CSS::Stylesheet.all_subclasses %}
-          if req.path == {{style_class}}.uri_path
-            res.content_type = "text/css"
-            res.print {{style_class}}
-            next
-          end
-          {% end %}
-        {% end %}
-        {% begin %}
           {% for resource_class in Resource.all_subclasses %}
             {% if !resource_class.abstract? %}
               next if {{resource_class}}.handle(ctx)
