@@ -25,6 +25,7 @@ class AssetFile
     if file = AssetFileRegistry.query(ctx.request.path)
       ctx.response.content_type = file.mime_type
       ctx.response.headers["ETag"] = file.etag
+      ctx.response.headers["Cache-Control"] = "public, max-age=315360000, immutable"
 
       if ctx.request.headers["If-None-Match"]?.try { |inm| inm.includes?(file.etag) }
         ctx.response.status_code = 304
