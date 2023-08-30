@@ -225,7 +225,7 @@ module CSS
     end
 
     macro fontFamily(ff)
-      prop("font-family", {{ff.stringify}})
+      prop("font-family", {{ff}})
     end
 
     macro fontSize(fs)
