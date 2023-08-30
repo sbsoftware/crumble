@@ -6,8 +6,10 @@ class AssetFile
   getter contents : String
   getter etag : String
 
-  def initialize(@uri_path, @contents)
+  def initialize(uri_path, @contents)
     @etag = Digest::MD5.hexdigest(@contents)
+    file, _, extension = uri_path.rpartition('.')
+    @uri_path = "#{file}_#{etag}.#{extension}"
     AssetFileRegistry.add(@uri_path, self)
   end
 

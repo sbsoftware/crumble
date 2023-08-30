@@ -2,7 +2,7 @@ require "../asset_file"
 require "../template"
 require "../js/*"
 
-JavascriptFile.register "assets/stimulus.js", "#{__DIR__}/../../assets/stimulus.js"
+StimulusFile = JavascriptFile.register "assets/stimulus.js", "#{__DIR__}/../../assets/stimulus.js"
 
 abstract class JavascriptEvent < JS::CallContext
   def self.to_s(io : IO)
@@ -33,6 +33,10 @@ class FetchEvent < JavascriptEvent
 end
 
 abstract class StimulusController
+  # HACK: This is just there to prevent the compiler from dropping the asset file altogether,
+  # as it is only used in src/stimulus/stimulus.cr which has its own compile run
+  @@stimulus_file : AssetFile = StimulusFile
+
   record Target, controller : StimulusController.class, name : String do
     def to_tag_attr
       {"data-#{controller.controller_name}-target", name}

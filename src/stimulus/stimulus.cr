@@ -2,7 +2,7 @@ require "./stimulus_controller"
 
 puts String.build { |output|
   output << <<-SCRIPT
-  import { Application, Controller } from "/assets/stimulus.js"
+  import { Application, Controller } from "#{StimulusFile.uri_path}"
   window.Stimulus = Application.start();
   SCRIPT
   output << "\n\n"
