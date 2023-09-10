@@ -101,11 +101,15 @@ abstract class Resource
   def render(tpl)
     _layout = layout
     if _layout
-      layout.to_html(@ctx.response) do |io, indent_level|
+      _layout.to_html(@ctx.response) do |io, indent_level|
         tpl.to_html(io, indent_level)
       end
     else
-      @ctx.response.print tpl
+      if tpl.responds_to?(:to_html)
+        tpl.to_html(@ctx.response)
+      else
+        tpl.to_s(@ctx.response)
+      end
     end
   end
 
