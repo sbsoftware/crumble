@@ -11,7 +11,7 @@ module CSS::Stylesheet::AssetFileSpec
 
   describe "MyStyle.asset_file" do
     it "should have the same .uri_path value" do
-      MyStyle.asset_file.uri_path.should eq(MyStyle.uri_path)
+      MyStyle.uri_path.should match(/\/styles\/css__stylesheet__asset_file_spec__my_style_.+\.css/)
     end
   end
 end

@@ -4,16 +4,12 @@ require "./*"
 
 module CSS
   abstract class Stylesheet
-    def self.asset_file
-      @@asset_file
-    end
-
     macro inherited
-      @@asset_file = CssFile.new("/styles/#{self.name.underscore.gsub("::", "__")}.css", self.to_s)
-    end
+      @@asset_file : CssFile = CssFile.new("/styles/#{self.name.underscore.gsub("::", "__")}.css", self.to_s)
 
-    def self.uri_path
-      asset_file.uri_path
+      def self.uri_path
+        @@asset_file.uri_path
+      end
     end
 
     macro rules(&blk)
