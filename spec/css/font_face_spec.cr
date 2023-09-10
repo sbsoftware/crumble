@@ -15,7 +15,7 @@ describe "a style with a font face definition" do
   it "outputs correct CSS" do
     expected = <<-CSS
     @font-face {
-      font-family: "Helvetica";
+      font-family: Helvetica;
       src: url("https://example.com/helvetica.ttf");
     }
 
