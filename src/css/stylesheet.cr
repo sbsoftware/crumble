@@ -11,6 +11,11 @@ module CSS
       end
     end
 
+    def self.to_html_attrs(_tag, attrs)
+      attrs["rel"] = "stylesheet"
+      attrs["href"] = uri_path
+    end
+
     macro rules(&blk)
       def self.to_s(__rulesio__ : IO)
         capture_rules {{blk}}
