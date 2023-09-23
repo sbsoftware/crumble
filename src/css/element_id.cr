@@ -9,7 +9,7 @@ module CSS
     end
 
     def self.to_html_attrs(_tag, attrs)
-      attrs["id"] = self
+      attrs["id"] = self.to_s
     end
   end
 end
