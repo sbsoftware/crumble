@@ -244,7 +244,7 @@ abstract class StimulusController
     CSS::AttrSelector.new(html_attr_name, self.controller_name)
   end
 
-  private def html_attr_name
+  def self.html_attr_name
     "data-controller"
   end
 end
