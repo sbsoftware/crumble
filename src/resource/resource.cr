@@ -82,24 +82,24 @@ abstract class Resource
   def initialize(@ctx)
   end
 
-  def layout_class
-    nil
-  end
-
-  def layout
-    layout_cls = layout_class
-    if layout_cls
-      layout_cls.new.tap do |layout|
-        layout_config(layout)
+  macro layout(klass, &blk)
+    {% if blk %}
+      class Layout < {{klass}}
+        {{blk.body}}
       end
-    end
-  end
 
-  def layout_config(layout)
+      def resource_layout
+        Layout
+      end
+    {% else %}
+      def resource_layout
+        {{klass}}
+      end
+    {% end %}
   end
 
   def render(tpl)
-    _layout = layout
+    _layout = resource_layout
     if _layout
       _layout.to_html(@ctx.response) do |io, indent_level|
         tpl.to_html(io, indent_level)
@@ -111,9 +111,6 @@ abstract class Resource
         tpl.to_s(@ctx.response)
       end
     end
-  end
-
-  def print_to_response(tpl)
   end
 
   def index
