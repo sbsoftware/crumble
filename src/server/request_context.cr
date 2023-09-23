@@ -1,4 +1,4 @@
-class Crumble::Server::RequestContext(S)
+class Crumble::Server::RequestContext(S) < Crumble::Server::AbstractRequestContext
   SESSION_COOKIE_NAME = "_crumble_session"
 
   getter session_store : MemorySessionStore(S)
