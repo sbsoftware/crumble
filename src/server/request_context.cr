@@ -1,3 +1,5 @@
+require "./abstract_request_context"
+
 class Crumble::Server::RequestContext(S) < Crumble::Server::AbstractRequestContext
   SESSION_COOKIE_NAME = "_crumble_session"
 

@@ -1,4 +1,4 @@
-require "../src/server/request_context"
+require "../src/server/abstract_request_context"
 require "./test_request"
 require "./test_response"
 
