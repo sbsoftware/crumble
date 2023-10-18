@@ -49,6 +49,10 @@ class AssetFile
   def to_s(io : IO)
     io << @contents
   end
+
+  def to_js_ref
+    uri_path
+  end
 end
 
 require "./*"

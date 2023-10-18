@@ -11,5 +11,9 @@ module CSS
     def self.to_html_attrs(_tag, attrs)
       attrs["class"] = self.to_s
     end
+
+    def self.to_js_ref
+      to_s.dump
+    end
   end
 end
