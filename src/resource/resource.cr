@@ -119,7 +119,7 @@ abstract class Resource
   end
 
   def id?
-    self.class.match(@ctx.request.path).try { |m| m[2].to_i64 }
+    self.class.match(@ctx.request.path).try { |m| m[2]?.try(&.to_i64) }
   end
 
   def id
