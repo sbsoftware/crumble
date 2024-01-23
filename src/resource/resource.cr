@@ -76,7 +76,7 @@ abstract class Resource
   end
 
   def self.uri_path_matcher
-    /#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
+    /^#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
   end
 
   def initialize(@ctx)
