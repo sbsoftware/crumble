@@ -36,8 +36,13 @@ module Crumble::Resource::LayoutSpec
 
   describe "MyResource.handle" do
     it "should print the correct HTML to the HTTP response" do
-      ctx = Crumble::Server::TestRequestContext.new(MyResource.uri_path)
-      MyResource.handle(ctx)
+      res = String.build do |io|
+        orig_ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: MyResource.uri_path)
+        session_store = Crumble::Server::MemorySessionStore(Crumble::Server::Session).new
+        ctx = Crumble::Server::RequestContext.new(session_store, orig_ctx)
+        MyResource.handle(ctx)
+        ctx.response.flush
+      end
 
       expected = <<-HTML.squish
       <header>MyResource - MySite</header>
@@ -46,7 +51,7 @@ module Crumble::Resource::LayoutSpec
       </main>
       HTML
 
-      ctx.response.to_s.should eq(expected)
+      res.should contain(expected)
     end
   end
 end
