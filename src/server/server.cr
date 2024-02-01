@@ -26,7 +26,7 @@ module Crumble
       end
 
       request_handler = RootRequestHandler.new(MemorySessionStore(Crumble::Server::Session).new)
-      server = HTTP::Server.new([LogHandler.new, request_handler])
+      server = HTTP::Server.new([LogHandler.new(STDOUT), request_handler])
 
       if ENV.fetch("CRUMBLE_ORM_MIGRATION", "").in?(["1", "true"])
         {% for orm_class in Crumble::ORM::Base.all_subclasses %}
