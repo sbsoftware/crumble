@@ -16,7 +16,7 @@ class FakeDB
   end
 
   def self.assert_empty!
-    raise "Expected more queries!" unless @@queries.empty?
+    raise "Expected more queries!\n\n#{@@queries.join("\n")}\n\n" unless @@queries.empty?
   end
 
   def self.query_one(str)
