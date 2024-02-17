@@ -10,7 +10,11 @@ abstract class Resource
 
     case ctx.request.method
     when "GET"
-      instance.index
+      if instance.id? && instance.top_level?
+        instance.show
+      else
+        instance.index
+      end
     when "POST"
       if instance.id? && instance.top_level?
         if instance.responds_to? :update
@@ -114,6 +118,11 @@ abstract class Resource
   end
 
   def index
+    @ctx.response.status_code = 404
+    @ctx.response.print "Not Found"
+  end
+
+  def show
     @ctx.response.status_code = 404
     @ctx.response.print "Not Found"
   end
