@@ -117,6 +117,11 @@ abstract class Resource
     end
   end
 
+  def redirect(new_path)
+    @ctx.response.status_code = 303
+    @ctx.response.headers["Location"] = new_path
+  end
+
   def index
     @ctx.response.status_code = 404
     @ctx.response.print "Not Found"
