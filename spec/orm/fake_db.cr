@@ -85,7 +85,7 @@ class ExpectedQuery
     set_result({{ hashes.map { |h| "#{h} of String => DB::Any".id } }}.splat)
   end
 
-  def set_result(*data : Array(Hash(String, DB::Any)))
+  def set_result(data : Array(Hash(String, DB::Any)))
     @result = FakeResult.new(data)
   end
 end
