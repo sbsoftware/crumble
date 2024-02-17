@@ -88,4 +88,8 @@ class ExpectedQuery
   def set_result(data : Array(Hash(String, DB::Any)))
     @result = FakeResult.new(data)
   end
+
+  def to_s(io)
+    io << query
+  end
 end
