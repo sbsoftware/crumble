@@ -1,4 +1,4 @@
-abstract class Resource
+abstract class Crumble::Resource
   @ctx : Crumble::Server::RequestContext
 
   def self.handle(ctx)

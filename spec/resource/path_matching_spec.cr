@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 module Crumble::Resource::PathMatchingSpec
-  class RootResource < ::Resource
+  class RootResource < Resource
     def self.root_path
       "/"
     end

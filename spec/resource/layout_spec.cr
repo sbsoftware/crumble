@@ -22,7 +22,7 @@ module Crumble::Resource::LayoutSpec
     end
   end
 
-  class MyResource < ::Resource
+  class MyResource < Resource
     layout MyLayout do
       def self.page_title
         "MyResource - #{super}"

@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 module Crumble::Resource::RoutingSpec
-  class MyResource < ::Resource
+  class MyResource < Resource
     layout nil
 
     def index

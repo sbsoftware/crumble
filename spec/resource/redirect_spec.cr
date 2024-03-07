@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 module Crumble::Resource::RedirectSpec
-  class MyResource < ::Resource
+  class MyResource < Resource
     layout nil
 
     def create

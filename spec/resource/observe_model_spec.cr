@@ -9,7 +9,7 @@ class ObservedModel < Crumble::ORM::Base
   end
 end
 
-class ObserverResource < Resource
+class ObserverResource < Crumble::Resource
   @@observations = 0
 
   def self.observations
