@@ -1,5 +1,3 @@
-require "./resource_path"
-
 abstract class Resource
   @ctx : Crumble::Server::RequestContext
 
