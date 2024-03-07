@@ -25,7 +25,7 @@ module Crumble
         end
       end
 
-      request_handler = RootRequestHandler.new(MemorySessionStore(Crumble::Server::Session).new)
+      request_handler = RootRequestHandler.new(MemorySessionStore.new)
       server = HTTP::Server.new([LogHandler.new(STDOUT), request_handler])
 
       if ENV.fetch("CRUMBLE_ORM_MIGRATION", "").in?(["1", "true"])

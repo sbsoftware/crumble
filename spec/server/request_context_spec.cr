@@ -5,7 +5,7 @@ describe Crumble::Server::RequestContext do
     context "when the request has a cookie with a session key" do
       context "when a session with the key exists" do
         it "returns it" do
-          session_store = Crumble::Server::MemorySessionStore(Crumble::Server::Session).new
+          session_store = Crumble::Server::MemorySessionStore.new
           existing_session_key = Crumble::Server::SessionKey.generate
 
           original_request = HTTP::Request.new("POST", "/dummy", nil, nil)
@@ -22,7 +22,7 @@ describe Crumble::Server::RequestContext do
 
       context "when no session with the key exists in the store" do
         it "returns a new session with a new key" do
-          session_store = Crumble::Server::MemorySessionStore(Crumble::Server::Session).new
+          session_store = Crumble::Server::MemorySessionStore.new
           existing_session_key = Crumble::Server::SessionKey.generate
 
           original_request = HTTP::Request.new("POST", "/dummy", nil, nil)

@@ -1,9 +1,9 @@
-require "./abstract_request_context"
+require "./session_store"
 
-class Crumble::Server::RequestContext(S) < Crumble::Server::AbstractRequestContext
+class Crumble::Server::RequestContext
   SESSION_COOKIE_NAME = "_crumble_session"
 
-  getter session_store : MemorySessionStore(S)
+  getter session_store : SessionStore
   getter original_context : HTTP::Server::Context
 
   delegate request, response, to: original_context

@@ -10,7 +10,7 @@ end
 
 describe Crumble::Server::MemorySessionStore do
   it "saves a session and retrieves it again" do
-    store = Crumble::Server::MemorySessionStore(MemorySessionStoreTest::MySession).new
+    store = Crumble::Server::MemorySessionStore.new
     session_key = Crumble::Server::SessionKey.generate
     user_id = 12345
     session = MemorySessionStoreTest::MySession.new(session_key, user_id)

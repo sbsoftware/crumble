@@ -1,7 +1,7 @@
 require "http/server/handler"
 require "./request_context"
 
-class Crumble::Server::RootRequestHandler(S)
+class Crumble::Server::RootRequestHandler
   include HTTP::Handler
 
   REQUEST_HANDLERS = [] of Class.class
@@ -10,7 +10,7 @@ class Crumble::Server::RootRequestHandler(S)
     {% REQUEST_HANDLERS << rh %}
   end
 
-  getter session_store : S
+  getter session_store : SessionStore
 
   def initialize(@session_store)
   end

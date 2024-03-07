@@ -1,7 +1,7 @@
 require "./resource_path"
 
 abstract class Resource
-  @ctx : Crumble::Server::AbstractRequestContext
+  @ctx : Crumble::Server::RequestContext
 
   def self.handle(ctx)
     return false if match(ctx.request.path).nil?
