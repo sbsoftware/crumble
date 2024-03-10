@@ -1,5 +1,7 @@
 require "http/server/handler"
 require "./request_context"
+require "../asset_file"
+require "../resource"
 
 class Crumble::Server::RootRequestHandler
   include HTTP::Handler

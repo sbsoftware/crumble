@@ -1,6 +1,3 @@
-require "../css"
-require "../resource"
-require "../asset_file"
 require "./root_request_handler"
 require "./session"
 require "./memory_session_store"
