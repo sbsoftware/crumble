@@ -130,6 +130,21 @@ abstract class Crumble::Resource
     @ctx.response.print "Not Found"
   end
 
+  def create
+    @ctx.response.status_code = 404
+    @ctx.response.print "Not Found"
+  end
+
+  def update
+    @ctx.response.status_code = 404
+    @ctx.response.print "Not Found"
+  end
+
+  def destroy
+    @ctx.response.status_code = 404
+    @ctx.response.print "Not Found"
+  end
+
   def id?
     self.class.match(@ctx.request.path).try { |m| m[2]?.try(&.to_i64) }
   end
