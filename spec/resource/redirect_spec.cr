@@ -8,10 +8,12 @@ module Crumble::Resource::RedirectSpec
   end
 
   context "with a `POST /my` request" do
-    ctx = Crumble::Server::TestRequestContext.new(resource: "/crumble/resource/redirect_spec/my", method: "POST")
-    MyResource.handle(ctx)
+    it "should set correct status code and location header" do
+      ctx = Crumble::Server::TestRequestContext.new(resource: "/crumble/resource/redirect_spec/my", method: "POST")
+      MyResource.handle(ctx)
 
-    ctx.response.status_code.should eq(303)
-    ctx.response.headers["Location"].should eq("/crumble/resource/redirect_spec/my/1")
+      ctx.response.status_code.should eq(303)
+      ctx.response.headers["Location"].should eq("/crumble/resource/redirect_spec/my/1")
+    end
   end
 end
