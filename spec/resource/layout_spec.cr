@@ -37,9 +37,7 @@ module Crumble::Resource::LayoutSpec
   describe "MyResource.handle" do
     it "should print the correct HTML to the HTTP response" do
       res = String.build do |io|
-        orig_ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: MyResource.uri_path)
-        session_store = Crumble::Server::MemorySessionStore.new
-        ctx = Crumble::Server::RequestContext.new(session_store, orig_ctx)
+        ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: MyResource.uri_path)
         MyResource.handle(ctx)
         ctx.response.flush
       end

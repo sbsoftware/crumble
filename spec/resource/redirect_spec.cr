@@ -10,9 +10,7 @@ module Crumble::Resource::RedirectSpec
   end
 
   context "with a `POST /my` request" do
-    orig_ctx = Crumble::Server::TestRequestContext.new(resource: "/crumble/resource/redirect_spec/my", method: "POST")
-    session_store = Crumble::Server::MemorySessionStore.new
-    ctx = Crumble::Server::RequestContext.new(session_store, orig_ctx)
+    ctx = Crumble::Server::TestRequestContext.new(resource: "/crumble/resource/redirect_spec/my", method: "POST")
     MyResource.handle(ctx)
 
     ctx.response.status_code.should eq(303)
