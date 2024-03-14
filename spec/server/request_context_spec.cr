@@ -17,6 +17,7 @@ describe Crumble::Server::RequestContext do
           session_store.set(existing_session)
 
           request_context.session.should eq(existing_session)
+          original_response.cookies.has_key?(Crumble::Server::RequestContext::SESSION_COOKIE_NAME).should be_false
         end
       end
 
@@ -32,6 +33,7 @@ describe Crumble::Server::RequestContext do
           original_request.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME] = existing_session_key.to_s
 
           request_context.session.id.should_not eq(existing_session_key)
+          original_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].path.should eq("/")
         end
       end
     end

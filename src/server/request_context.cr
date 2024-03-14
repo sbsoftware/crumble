@@ -28,7 +28,7 @@ class Crumble::Server::RequestContext
   private def new_session
     new_key = SessionKey.generate
     s = Session.new(new_key)
-    response.cookies[SESSION_COOKIE_NAME] = new_key.to_s
+    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: new_key.to_s, path: "/")
     session_store.set(s)
     s
   end
