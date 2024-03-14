@@ -137,6 +137,10 @@ abstract class Crumble::Resource
     @ctx.response.headers["Location"] = new_path
   end
 
+  def redirect_back(fallback_path)
+    redirect(@ctx.request.headers["Referrer"]? || fallback_path)
+  end
+
   def index
     @ctx.response.status_code = 404
     @ctx.response.print "Not Found"
