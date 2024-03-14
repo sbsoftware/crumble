@@ -1,4 +1,5 @@
 require "./util/*"
 require "./css"
 require "./orm/orm"
+require "./context_view"
 require "./server"
