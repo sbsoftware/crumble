@@ -84,6 +84,10 @@ abstract class Crumble::Resource
   def initialize(@ctx)
   end
 
+  def resource_layout
+    nil
+  end
+
   macro layout(klass, &blk)
     {% if blk %}
       class Layout < {{klass}}
@@ -91,26 +95,39 @@ abstract class Crumble::Resource
       end
 
       def resource_layout
-        Layout
+        {% if klass.resolve < Crumble::ContextView %}
+          Layout.new(@ctx)
+        {% else %}
+          Layout
+        {% end %}
       end
     {% else %}
       def resource_layout
-        {{klass}}
+        {% if klass.resolve < Crumble::ContextView %}
+          {{klass}}.new(@ctx)
+        {% else %}
+          {{klass}}
+        {% end %}
       end
     {% end %}
   end
 
-  def render(tpl)
-    _layout = resource_layout
-    if _layout
-      _layout.to_html(@ctx.response) do |io, indent_level|
-        tpl.to_html(io, indent_level)
+  macro render(tpl)
+    {% if tpl.is_a?(Path) && tpl.resolve < Crumble::ContextView %}
+      %tpl = {{tpl}}.new(@ctx)
+    {% else %}
+      %tpl = {{tpl}}
+    {% end %}
+
+    if %layout = resource_layout
+      %layout.to_html(@ctx.response) do |io, indent_level|
+        %tpl.to_html(io, indent_level)
       end
     else
-      if tpl.responds_to?(:to_html)
-        tpl.to_html(@ctx.response)
+      if %tpl.responds_to?(:to_html)
+        %tpl.to_html(@ctx.response)
       else
-        tpl.to_s(@ctx.response)
+        %tpl.to_s(@ctx.response)
       end
     end
   end
