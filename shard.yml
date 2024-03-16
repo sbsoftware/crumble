@@ -2,8 +2,6 @@ name: crumble
 version: 0.13.0
 
 dependencies:
-  pg:
-    github: will/crystal-pg
   to_html:
     github: sbsoftware/to_html.cr
 

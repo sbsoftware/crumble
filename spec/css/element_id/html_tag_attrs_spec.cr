@@ -1,4 +1,5 @@
 require "../../spec_helper"
+require "to_html"
 
 module CSS::ElementId::HtmlTagAttrsSpec
   class MyId < CSS::ElementId

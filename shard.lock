@@ -1,14 +1,6 @@
 version: 2.0
 shards:
-  db:
-    git: https://github.com/crystal-lang/crystal-db.git
-    version: 0.13.1
-
-  pg:
-    git: https://github.com/will/crystal-pg.git
-    version: 0.28.0
-
   to_html:
     git: https://github.com/sbsoftware/to_html.cr.git
-    version: 1.0.4
+    version: 1.0.5
 

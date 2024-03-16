@@ -45,10 +45,6 @@ abstract class Crumble::Resource
     "/" + self.name.chomp("Resource").gsub("::", "/").underscore
   end
 
-  def self.root_path(id : Crumble::ORM::Attribute)
-    root_path(id.value)
-  end
-
   def self.root_path(id : Nil)
     ""
   end
@@ -63,10 +59,6 @@ abstract class Crumble::Resource
 
   def self.uri_path
     root_path
-  end
-
-  def self.uri_path(id : Crumble::ORM::Attribute)
-    uri_path(id.value)
   end
 
   def self.uri_path(id : Nil)
