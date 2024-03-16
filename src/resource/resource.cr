@@ -130,7 +130,7 @@ abstract class Crumble::Resource
   end
 
   def redirect_back(fallback_path)
-    redirect(@ctx.request.headers["Referrer"]? || fallback_path)
+    redirect(@ctx.request.headers["Referer"]? || fallback_path)
   end
 
   def index

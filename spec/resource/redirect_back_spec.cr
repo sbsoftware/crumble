@@ -16,7 +16,7 @@ module Crumble::Resource::RedirectBackSpec
   context "with a referrer header" do
     it "should set location to the value of the header" do
       headers = HTTP::Headers.new
-      headers["Referrer"] = "/somewhere/else"
+      headers["Referer"] = "/somewhere/else"
       ctx = Crumble::Server::TestRequestContext.new(resource: MyResource.uri_path, method: "POST", headers: headers)
       MyResource.handle(ctx)
 
