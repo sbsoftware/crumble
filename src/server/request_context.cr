@@ -25,10 +25,16 @@ class Crumble::Server::RequestContext
     end
   end
 
+  # Override this method to change the session cookie lifetime
+  # TODO: Think about how to properly test this
+  def session_cookie_max_age
+    nil
+  end
+
   private def new_session
     new_key = SessionKey.generate
     s = Session.new(new_key)
-    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: new_key.to_s, path: "/")
+    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: new_key.to_s, path: "/", max_age: session_cookie_max_age)
     session_store.set(s)
     s
   end
