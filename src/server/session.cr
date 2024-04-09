@@ -1,4 +1,8 @@
+require "yaml"
+
 class Crumble::Server::Session
+  include YAML::Serializable
+
   annotation NoSetter; end
 
   @[NoSetter]

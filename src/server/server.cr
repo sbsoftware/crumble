@@ -1,6 +1,7 @@
 require "./root_request_handler"
 require "./session"
 require "./memory_session_store"
+require "./file_session_store"
 require "./log_handler"
 require "http/server"
 require "option_parser"
