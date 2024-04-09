@@ -13,6 +13,16 @@ class Crumble::Server::RequestContext
   end
 
   def session
+    SessionDecorator.new(session_store, load_session)
+  end
+
+  # Override this method to change the session cookie lifetime
+  # TODO: Think about how to properly test this
+  def session_cookie_max_age
+    nil
+  end
+
+  private def load_session
     if request.cookies.has_key?(SESSION_COOKIE_NAME)
       key = SessionKey.new(UUID.new(request.cookies[SESSION_COOKIE_NAME].value))
       if session_store.has_key?(key)
@@ -24,12 +34,6 @@ class Crumble::Server::RequestContext
     else
       new_session
     end
-  end
-
-  # Override this method to change the session cookie lifetime
-  # TODO: Think about how to properly test this
-  def session_cookie_max_age
-    nil
   end
 
   private def new_session

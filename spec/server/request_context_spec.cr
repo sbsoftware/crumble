@@ -4,7 +4,7 @@ describe Crumble::Server::RequestContext do
   describe "#session" do
     context "when the request has a cookie with a session key" do
       context "when a session with the key exists" do
-        it "returns it" do
+        it "returns a decorator containing it" do
           session_store = Crumble::Server::MemorySessionStore.new
           existing_session_key = Crumble::Server::SessionKey.generate
 
@@ -16,13 +16,14 @@ describe Crumble::Server::RequestContext do
           existing_session = Crumble::Server::Session.new(existing_session_key)
           session_store.set(existing_session)
 
-          request_context.session.should eq(existing_session)
+          request_context.session.should be_a(Crumble::Server::SessionDecorator)
+          request_context.session.session.should eq(existing_session)
           original_response.cookies.has_key?(Crumble::Server::RequestContext::SESSION_COOKIE_NAME).should be_false
         end
       end
 
       context "when no session with the key exists in the store" do
-        it "returns a new session with a new key" do
+        it "returns a decorator with a new session with a new key" do
           session_store = Crumble::Server::MemorySessionStore.new
           existing_session_key = Crumble::Server::SessionKey.generate
 
