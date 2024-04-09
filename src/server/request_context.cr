@@ -33,7 +33,7 @@ class Crumble::Server::RequestContext
 
   private def new_session
     new_key = SessionKey.generate
-    s = Session.new(new_key)
+    s = Session.new(session_store, new_key)
     response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: new_key.to_s, path: "/", max_age: session_cookie_max_age)
     session_store.set(s)
     s

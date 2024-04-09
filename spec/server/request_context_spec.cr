@@ -13,7 +13,7 @@ describe Crumble::Server::RequestContext do
           original_context = HTTP::Server::Context.new(original_request, original_response)
           request_context = Crumble::Server::RequestContext.new(session_store, original_context)
           original_request.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME] = existing_session_key.to_s
-          existing_session = Crumble::Server::Session.new(existing_session_key)
+          existing_session = Crumble::Server::Session.new(session_store, existing_session_key)
           session_store.set(existing_session)
 
           request_context.session.should eq(existing_session)

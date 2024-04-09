@@ -1,6 +1,9 @@
+require "./session_store"
+
 class Crumble::Server::Session
   getter id : SessionKey
+  private getter session_store : SessionStore
 
-  def initialize(@id)
+  def initialize(@session_store, @id)
   end
 end
