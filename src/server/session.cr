@@ -6,4 +6,8 @@ class Crumble::Server::Session
 
   def initialize(@session_store, @id)
   end
+
+  def initialize(@session_store)
+    @id = SessionKey.generate
+  end
 end
