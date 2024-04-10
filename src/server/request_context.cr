@@ -4,12 +4,28 @@ require "./session_decorator"
 class Crumble::Server::RequestContext
   SESSION_COOKIE_NAME = "_crumble_session"
 
-  getter session_store : SessionStore
+  @@session_store : SessionStore?
+
   getter original_context : HTTP::Server::Context
 
   delegate request, response, to: original_context
 
-  def initialize(@session_store, @original_context)
+  def initialize(@original_context)
+  end
+
+  def self.session_store
+    return @@session_store.not_nil! if @@session_store
+
+    @@session_store = init_session_store
+  end
+
+  # Override to change the session store implementation
+  def self.init_session_store
+    MemorySessionStore.new
+  end
+
+  def session_store
+    self.class.session_store
   end
 
   def session

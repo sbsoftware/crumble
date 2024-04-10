@@ -23,7 +23,7 @@ module Crumble
         end
       end
 
-      request_handler = RootRequestHandler.new(MemorySessionStore.new)
+      request_handler = RootRequestHandler.new
       server = HTTP::Server.new([LogHandler.new(STDOUT), request_handler])
 
       address = server.bind_tcp "0.0.0.0", port
