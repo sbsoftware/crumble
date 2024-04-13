@@ -36,6 +36,8 @@ module Crumble::Resource::ContextViewLayoutSpec
         ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: MyResource.uri_path, remote_address: "252.35.18.5")
         MyResource.handle(ctx)
         ctx.response.flush
+
+        ctx.response.headers["Content-Type"].should eq("text/html")
       end
 
       expected = <<-HTML.squish

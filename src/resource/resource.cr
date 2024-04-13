@@ -111,6 +111,8 @@ abstract class Crumble::Resource
       %tpl = {{tpl}}
     {% end %}
 
+    @ctx.response.headers["Content-Type"] = "text/html"
+
     if %layout = resource_layout
       %layout.to_html(@ctx.response) do |io, indent_level|
         %tpl.to_html(io, indent_level)
