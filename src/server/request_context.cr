@@ -29,7 +29,7 @@ class Crumble::Server::RequestContext
   end
 
   def session
-    SessionDecorator.new(session_store, load_session)
+    @session ||= SessionDecorator.new(session_store, load_session)
   end
 
   # Override this method to change the session cookie lifetime
