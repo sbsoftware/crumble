@@ -1,4 +1,4 @@
-class TestRequest < HTTP::Request
+class Crumble::Server::TestRequest < HTTP::Request
   getter id : String
   getter resource : String
   getter method : String

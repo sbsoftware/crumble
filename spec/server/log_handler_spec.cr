@@ -6,14 +6,14 @@ describe LogHandler do
       it "should output it as the remote IP" do
         headers = HTTP::Headers.new
         headers["X-Forwarded-For"] = "123.234.12.0"
-        req = TestRequest.new(
+        req = Crumble::Server::TestRequest.new(
           id: "abcdefg",
           resource: "/",
           method: "GET",
           remote_address: "192.168.1.1",
           headers: headers
         )
-        res = TestResponse.new
+        res = Crumble::Server::TestResponse.new
         ctx = HTTP::Server::Context.new(req, res)
 
         output = String.build do |io|
@@ -28,14 +28,14 @@ describe LogHandler do
     context "when called without an X-Forwarded-For header" do
       it "should output the original remote IP" do
         headers = HTTP::Headers.new
-        req = TestRequest.new(
+        req = Crumble::Server::TestRequest.new(
           id: "abcdefg",
           resource: "/",
           method: "GET",
           remote_address: "192.168.1.1",
           headers: headers
         )
-        res = TestResponse.new
+        res = Crumble::Server::TestResponse.new
         ctx = HTTP::Server::Context.new(req, res)
 
         output = String.build do |io|
