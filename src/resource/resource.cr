@@ -1,5 +1,39 @@
 abstract class Crumble::Resource
-  @ctx : Crumble::Server::RequestContext
+  getter ctx : Crumble::Server::RequestContext
+
+  macro before(&blk)
+    before(:index, :create, :show, :update, :destroy) {{blk}}
+  end
+
+  macro before(*actions, &blk)
+    {% for action in actions %}
+      def _before_{{action.id}}
+        {% if @type.has_method?("_before_#{action.id}") %}
+          {% if @type.methods.map(&.name).includes?("_before_#{action.id}") %}
+            prev = previous_def
+          {% else %}
+            prev = super
+          {% end %}
+          return prev unless prev == true
+        {% end %}
+
+        {{blk.body}}
+      end
+    {% end %}
+  end
+
+  macro before_action_handling(instance, action_name)
+    if {{instance}}.responds_to? :_before_{{action_name.id}}
+      %ret_val = {{instance}}._before_{{action_name.id}}
+      if %ret_val == false
+        ctx.response.status = :bad_request
+        return true
+      elsif %ret_val.is_a?(Int32)
+        ctx.response.status_code = %ret_val
+        return true
+      end
+    end
+  end
 
   def self.handle(ctx)
     return false if match(ctx.request.path).nil?
@@ -9,30 +43,23 @@ abstract class Crumble::Resource
     case ctx.request.method
     when "GET"
       if instance.id? && instance.top_level?
+        before_action_handling(instance, :show)
         instance.show
       else
+        before_action_handling(instance, :index)
         instance.index
       end
     when "POST"
       if instance.id? && instance.top_level?
-        if instance.responds_to? :update
-          instance.update
-        else
-          return false
-        end
+        before_action_handling(instance, :update)
+        instance.update
       else
-        if instance.responds_to? :create
-          instance.create
-        else
-          return false
-        end
+        before_action_handling(instance, :create)
+        instance.create
       end
     when "DELETE"
-      if instance.responds_to? :destroy
-        instance.destroy
-      else
-        return false
-      end
+      before_action_handling(instance, :destroy)
+      instance.destroy
     end
     return true
   end
