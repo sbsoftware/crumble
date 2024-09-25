@@ -26,3 +26,5 @@ class Crumble::Server::Session
     {% end %}
   end
 end
+
+require "./session/timestamps"

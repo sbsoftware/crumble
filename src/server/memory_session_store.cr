@@ -17,7 +17,7 @@ class Crumble::Server::MemorySessionStore
     @store[key]
   end
 
-  def set(session : Crumble::Server::Session) : Nil
+  private def store(session : Crumble::Server::Session) : Nil
     @store[session.id] = session
   end
 end

@@ -19,7 +19,7 @@ class Crumble::Server::FileSessionStore
     end
   end
 
-  def set(session : Session) : Nil
+  private def store(session : Session) : Nil
     File.open(path(session.id), "w") do |io|
       session.to_yaml(io)
     end
