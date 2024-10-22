@@ -1,7 +1,4 @@
 require "./root_request_handler"
-require "./session"
-require "./memory_session_store"
-require "./file_session_store"
 require "./log_handler"
 require "http/server"
 require "option_parser"
@@ -14,6 +11,14 @@ module Crumble
   module Server
     extend self
 
+    def log_middleware
+      LogHandler.new(STDOUT)
+    end
+
+    def middlewares
+      [log_middleware, RootRequestHandler.new].compact
+    end
+
     def start
       port = 8080
 
@@ -23,8 +28,7 @@ module Crumble
         end
       end
 
-      request_handler = RootRequestHandler.new
-      server = HTTP::Server.new([LogHandler.new(STDOUT), request_handler])
+      server = HTTP::Server.new(middlewares)
 
       address = server.bind_tcp "0.0.0.0", port
       puts "Listening on http://#{address}"
