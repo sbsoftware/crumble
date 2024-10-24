@@ -9,6 +9,9 @@ module Crumble::Server
       generic_path = context.request.path.gsub(/\/\d+(?=$|\/)/, "/:id")
       span_name = "#{context.request.method} #{generic_path}"
       OpenTelemetry.tracer.in_span(span_name) do |span|
+        # Span kind "server"
+        span.server!
+
         span["deployment.environment.name"] = ENV.fetch("CRUMBLE_ENV", "dev")
         span["http.method"] = context.request.method
         span["http.path"] = context.request.path
