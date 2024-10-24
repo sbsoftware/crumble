@@ -4,6 +4,8 @@ version: 0.17.0
 dependencies:
   to_html:
     github: sbsoftware/to_html.cr
+  opentelemetry-sdk:
+    github: wyhaines/opentelemetry-sdk.cr
 
 targets:
   crumble:

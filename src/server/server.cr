@@ -1,5 +1,6 @@
 require "./root_request_handler"
 require "./log_handler"
+require "./open_telemetry_handler"
 require "http/server"
 require "option_parser"
 
@@ -15,8 +16,12 @@ module Crumble
       LogHandler.new(STDOUT)
     end
 
+    def open_telemetry_handler
+      OpenTelemetryHandler.new
+    end
+
     def middlewares
-      [log_middleware, RootRequestHandler.new].compact
+      [log_middleware, open_telemetry_handler, RootRequestHandler.new].compact
     end
 
     def start
