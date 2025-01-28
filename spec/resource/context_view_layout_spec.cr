@@ -1,7 +1,9 @@
 require "../spec_helper"
 
 module Crumble::Resource::ContextViewLayoutSpec
-  class MyLayout < Crumble::ContextView
+  class MyLayout
+    include Crumble::ContextView
+
     template do
       html do
         body do
@@ -14,7 +16,9 @@ module Crumble::Resource::ContextViewLayoutSpec
     end
   end
 
-  class MyView < Crumble::ContextView
+  class MyView
+    include Crumble::ContextView
+
     template do
       div do
         "Your IP is #{ctx.request.remote_address}"

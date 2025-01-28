@@ -1,7 +1,9 @@
 require "./spec_helper"
 
 module Crumble::ContextViewSpec
-  class MyContextView < ContextView
+  class MyContextView
+    include Crumble::ContextView
+
     template do
       main do
         if ctx.request.path == "/"
@@ -18,8 +20,8 @@ module Crumble::ContextViewSpec
       ctx1 = Server::TestRequestContext.new(resource: "/")
       ctx2 = Server::TestRequestContext.new(resource: "/next")
 
-      view1 = MyContextView.new(ctx1)
-      view2 = MyContextView.new(ctx2)
+      view1 = MyContextView.new(ctx: ctx1)
+      view2 = MyContextView.new(ctx: ctx2)
 
       expected1 = <<-HTML.squish
       <main>

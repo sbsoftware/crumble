@@ -115,7 +115,7 @@ abstract class Crumble::Resource
 
       def resource_layout
         {% if klass.resolve < Crumble::ContextView %}
-          Layout.new(@ctx)
+          Layout.new(ctx: @ctx)
         {% else %}
           Layout
         {% end %}
@@ -123,7 +123,7 @@ abstract class Crumble::Resource
     {% else %}
       def resource_layout
         {% if klass.resolve < Crumble::ContextView %}
-          {{klass}}.new(@ctx)
+          {{klass}}.new(ctx: @ctx)
         {% else %}
           {{klass}}
         {% end %}
@@ -133,7 +133,7 @@ abstract class Crumble::Resource
 
   macro render(tpl)
     {% if tpl.is_a?(Path) && tpl.resolve < Crumble::ContextView %}
-      %tpl = {{tpl}}.new(@ctx)
+      %tpl = {{tpl}}.new(ctx: @ctx)
     {% else %}
       %tpl = {{tpl}}
     {% end %}
