@@ -57,6 +57,10 @@ module CSS
           __rulesio__ << ";\n"
         {% end %}
         __rulesio__ << "}\n"
+      {% elsif blk.body.name.stringify == "comment" %}
+        __rulesio__ << "/* "
+        __rulesio__ << {{blk.body.args.first}}
+        __rulesio__ << " */\n"
       {% else %}
         __rulesio__ << " " * {{level}} * 2
         __rulesio__ << make_selector({{blk.body.args.splat}})
