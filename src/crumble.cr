@@ -1,4 +1,5 @@
 require "to_html"
+require "./ext/**"
 require "./util/*"
 require "./css"
 require "./context_view"

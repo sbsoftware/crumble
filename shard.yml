@@ -7,6 +7,10 @@ dependencies:
   opentelemetry-sdk:
     github: wyhaines/opentelemetry-sdk.cr
 
+development_dependencies:
+  js:
+    github: sbsoftware/js.cr
+
 targets:
   crumble:
     main: src/cli.cr
