@@ -1,3 +1,5 @@
+require "js"
+
 class JS::Code
   ToHtml.class_template do
     script do
