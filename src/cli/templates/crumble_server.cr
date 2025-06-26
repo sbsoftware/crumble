@@ -1,4 +1,5 @@
 require "crumble"
+require "./crumble/**"
 require "./models/**"
 require "./views/**"
 require "./resources/**"

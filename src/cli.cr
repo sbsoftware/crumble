@@ -7,6 +7,7 @@ class Crumble::CLI
   end
 
   SRC_FOLDER = "src"
+  CRUMBLE_FORLDER = Path.new(SRC_FOLDER, "crumble")
   MODELS_FOLDER = Path.new(SRC_FOLDER, "models")
   VIEWS_FOLDER = Path.new(SRC_FOLDER, "views")
   RESOURCES_FOLDER = Path.new(SRC_FOLDER, "resources")
@@ -45,6 +46,7 @@ class Crumble::CLI
 
   def init
     ensure_dir(SRC_FOLDER)
+    ensure_dir(CRUMBLE_FOLDER)
     ensure_dir(MODELS_FOLDER)
     ensure_dir(VIEWS_FOLDER)
     ensure_dir(RESOURCES_FOLDER)
