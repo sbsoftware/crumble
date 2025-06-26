@@ -1,9 +1,15 @@
+require "../../context_view"
+
 {% unless flag?(:release) %}
   require "js"
   require "../../live_reload_resource"
+{% end %}
 
-  module ToHtml
-    class Layout
+module ToHtml
+  class Layout
+    include Crumble::ContextView
+
+    {% unless flag?(:release) %}
       class LiveReloadScript < JS::Code
         def_to_js do
           pageload_time = Date.now._call
@@ -21,6 +27,6 @@
       end
 
       append_to_head LiveReloadScript
-    end
+    {% end %}
   end
-{% end %}
+end
