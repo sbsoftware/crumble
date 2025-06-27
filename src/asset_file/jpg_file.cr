@@ -1,7 +1,7 @@
 require "./asset_file"
 
-class SvgImage < AssetFile
+class JPGFile < AssetFile
   def mime_type
-    "image/svg+xml"
+    "image/jpg"
   end
 end

@@ -1,7 +1,7 @@
 require "./asset_file"
 
-class JpgImage < AssetFile
+class ICOFile < AssetFile
   def mime_type
-    "image/jpg"
+    "image/x-icon"
   end
 end
