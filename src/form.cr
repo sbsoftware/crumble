@@ -1,5 +1,9 @@
+require "uri/params/serializable"
+
 module Crumble
   abstract class Form
+    include URI::Params::Serializable
+
     annotation Field; end
     annotation Nilable; end
 
@@ -11,30 +15,6 @@ module Crumble
         @[Nilable]
       {% end %}
       getter {{type_decl.var}} : {{type_decl.type}}?
-    end
-
-    def self.from_http_params(body : IO?)
-      new(__http_params: body.try(&.gets_to_end) || "")
-    end
-
-    def self.new(*, __http_params : String)
-      instance = allocate
-      instance.initialize(__http_params: __http_params)
-      GC.add_finalizer(instance) if instance.responds_to? :finalize
-      instance
-    end
-
-    def initialize(*, __http_params : String)
-      HTTP::Params.parse(__http_params) do |key, value|
-        {% begin %}
-        case key
-          {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-          when {{var.name.stringify}}
-            @{{var.name}} = value
-          {% end %}
-        end
-        {% end %}
-      end
     end
 
     def valid?

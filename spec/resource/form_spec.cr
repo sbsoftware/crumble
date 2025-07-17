@@ -8,7 +8,7 @@ module Crumble::Resource::FormSpec
 
   class TestResource < Crumble::Resource
     def create
-      form = TestForm.from_http_params(ctx.request.body)
+      form = TestForm.from_www_form(ctx.request.body.try(&.gets_to_end) || "")
 
       if form.valid?
         ctx.response << "Fields: #{form.values}"
