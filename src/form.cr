@@ -56,15 +56,19 @@ module Crumble
     end
 
     def values
-      {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) && !iv.annotation(Nilable) } %}
-        if (%field{var} = @{{var}}).nil?
-          raise "@{{var}} must not be nil!"
-        end
-      {% end %}
       {% begin %}
+        {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+          %field{var.name} = @{{var}}
+
+          {% unless var.annotation(Nilable) %}
+            if %field{var.name}.nil?
+              raise "@{{var}} must not be nil!"
+            end
+          {% end %}
+        {% end %}
         {
           {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-            {{var}}: @{{var}},
+            {{var}}: %field{var.name},
           {% end %}
         }
       {% end %}
