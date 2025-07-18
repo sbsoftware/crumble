@@ -11,6 +11,11 @@ module CSS
       end
     end
 
+    # Dummy implementation for compiler reasons
+    def self.uri_path
+      nil
+    end
+
     def self.to_html_attrs(_tag, attrs)
       attrs["rel"] = "stylesheet"
       attrs["href"] = uri_path
