@@ -12,6 +12,8 @@ module Crumble
   module Server
     extend self
 
+    @@port : Int32?
+
     def log_middleware
       LogHandler.new(STDOUT)
     end
@@ -25,19 +27,21 @@ module Crumble
     end
 
     def start
-      port = 8080
-
-      OptionParser.parse do |opts|
-        opts.on("-p PORT", "--port PORT", "define port to run server") do |opt|
-          port = opt.to_i
-        end
-      end
-
       server = HTTP::Server.new(middlewares)
 
       address = server.bind_tcp "0.0.0.0", port
       puts "Listening on http://#{address}"
       server.listen
+    end
+
+    def port : Int32
+      OptionParser.parse do |opts|
+        opts.on("-p PORT", "--port PORT", "define port to run server") do |opt|
+          @@port = opt.to_i
+        end
+      end
+
+      @@port || 8080
     end
   end
 end
