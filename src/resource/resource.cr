@@ -1,4 +1,8 @@
+require "../server/handler"
+
 abstract class Crumble::Resource
+  include Crumble::Server::Handler
+
   getter ctx : Crumble::Server::RequestContext
 
   macro before(&blk)
@@ -35,7 +39,7 @@ abstract class Crumble::Resource
     end
   end
 
-  def self.handle(ctx)
+  def self.handle(ctx) : Bool
     return false if match(ctx.request.path).nil?
 
     instance = self.new(ctx)
@@ -107,6 +111,10 @@ abstract class Crumble::Resource
     nil
   end
 
+  def handler_context
+    Crumble::Server::HandlerContext.new(@ctx, self)
+  end
+
   macro layout(klass, &blk)
     {% if blk %}
       class Layout < {{klass}}
@@ -115,7 +123,7 @@ abstract class Crumble::Resource
 
       def resource_layout
         {% if klass.resolve < Crumble::ContextView %}
-          Layout.new(ctx: @ctx)
+          Layout.new(ctx: handler_context)
         {% else %}
           Layout
         {% end %}
@@ -123,7 +131,7 @@ abstract class Crumble::Resource
     {% else %}
       def resource_layout
         {% if klass.resolve < Crumble::ContextView %}
-          {{klass}}.new(ctx: @ctx)
+          {{klass}}.new(ctx: handler_context)
         {% else %}
           {{klass}}
         {% end %}
@@ -133,7 +141,7 @@ abstract class Crumble::Resource
 
   macro render(tpl)
     {% if tpl.is_a?(Path) && tpl.resolve < Crumble::ContextView %}
-      %tpl = {{tpl}}.new(ctx: @ctx)
+      %tpl = {{tpl}}.new(ctx: handler_context)
     {% else %}
       %tpl = {{tpl}}
     {% end %}
@@ -205,5 +213,10 @@ abstract class Crumble::Resource
 
   def self.to_html_attrs(_tag, attrs)
     attrs["href"] = uri_path
+  end
+
+  def window_title : String?
+    # TODO: Use some default app name, maybe to be defined in Crumble::Server?
+    nil
   end
 end

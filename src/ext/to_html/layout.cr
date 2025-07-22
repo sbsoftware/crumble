@@ -9,6 +9,10 @@ module ToHtml
   class Layout
     include Crumble::ContextView
 
+    def window_title
+      ctx.handler.window_title
+    end
+
     {% unless flag?(:release) %}
       class LiveReloadScript < JS::Code
         def_to_js do

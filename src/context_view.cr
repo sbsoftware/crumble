@@ -1,8 +1,8 @@
-require "./server/request_context"
+require "./server/handler_context"
 
 module Crumble::ContextView
   macro included
-    getter ctx : Crumble::Server::RequestContext
+    getter ctx : Crumble::Server::HandlerContext
 
     def initialize(**args : **T) forall T
       {% verbatim do %}

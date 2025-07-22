@@ -1,7 +1,10 @@
+require "../server/handler"
 require "./asset_file_registry"
 require "digest/md5"
 
 class AssetFile
+  include Crumble::Server::Handler
+
   getter uri_path : String
   getter contents : String
   getter etag : String
@@ -21,7 +24,7 @@ class AssetFile
     {{@type}}.new("/{{uri_path.id}}", {{read_file(source_path)}})
   end
 
-  def self.handle(ctx)
+  def self.handle(ctx) : Bool
     if file = AssetFileRegistry.query(ctx.request.path)
       ctx.response.content_type = file.mime_type
       ctx.response.headers["ETag"] = file.etag
@@ -40,6 +43,10 @@ class AssetFile
 
   def mime_type
     "application/octet-stream"
+  end
+
+  def window_title : String?
+    nil
   end
 
   def to_html_attrs(_tag, attrs)

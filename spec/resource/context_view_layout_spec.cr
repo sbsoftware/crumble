@@ -6,6 +6,11 @@ module Crumble::Resource::ContextViewLayoutSpec
 
     template do
       html do
+        head do
+          if window_title = ctx.handler.window_title
+            title { window_title }
+          end
+        end
         body do
           header do
             "You are at #{ctx.request.path}"
@@ -32,6 +37,10 @@ module Crumble::Resource::ContextViewLayoutSpec
     def index
       render MyView
     end
+
+    def window_title
+      "The Title"
+    end
   end
 
   describe "MyResource.handle" do
@@ -46,6 +55,9 @@ module Crumble::Resource::ContextViewLayoutSpec
 
       expected = <<-HTML.squish
       <html>
+        <head>
+          <title>The Title</title>
+        </head>
         <body>
           <header>You are at /crumble/resource/context_view_layout_spec/my</header>
           <div>Your IP is 252.35.18.5:80</div>
