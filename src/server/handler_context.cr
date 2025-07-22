@@ -1,5 +1,6 @@
 require "./handler"
 require "./request_context"
+require "../../spec/test_request_context"
 
 module Crumble::Server
   struct HandlerContext
