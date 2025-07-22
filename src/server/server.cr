@@ -34,6 +34,10 @@ module Crumble
       server.listen
     end
 
+    def host : String
+      ENV.fetch("CRUMBLE_HOST", "localhost")
+    end
+
     def port : Int32
       OptionParser.parse do |opts|
         opts.on("-p PORT", "--port PORT", "define port to run server") do |opt|
