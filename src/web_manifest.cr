@@ -148,5 +148,9 @@ module Crumble
     def self.app_theme_color
       nil
     end
+
+    def self.app_screenshots
+      Tuple.new
+    end
   end
 end
