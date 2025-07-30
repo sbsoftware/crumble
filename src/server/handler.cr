@@ -7,7 +7,5 @@ module Crumble::Server
     macro included
       extend ClassMethods
     end
-
-    abstract def window_title : String?
   end
 end

@@ -1,9 +1,7 @@
-require "../server/handler"
+require "../server/view_handler"
 
 abstract class Crumble::Resource
-  include Crumble::Server::Handler
-
-  getter ctx : Crumble::Server::RequestContext
+  include Crumble::Server::ViewHandler
 
   macro before(&blk)
     before(:index, :create, :show, :update, :destroy) {{blk}}
@@ -104,15 +102,10 @@ abstract class Crumble::Resource
     /^#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
   end
 
-  def initialize(@ctx)
-  end
+  def initialize(@request_ctx); end
 
   def resource_layout
     nil
-  end
-
-  def handler_context
-    Crumble::Server::HandlerContext.new(@ctx, self)
   end
 
   macro layout(klass, &blk)
@@ -123,7 +116,7 @@ abstract class Crumble::Resource
 
       def resource_layout
         {% if klass.resolve < Crumble::ContextView %}
-          Layout.new(ctx: handler_context)
+          Layout.new(ctx: ctx)
         {% else %}
           Layout
         {% end %}
@@ -131,7 +124,7 @@ abstract class Crumble::Resource
     {% else %}
       def resource_layout
         {% if klass.resolve < Crumble::ContextView %}
-          {{klass}}.new(ctx: handler_context)
+          {{klass}}.new(ctx: ctx)
         {% else %}
           {{klass}}
         {% end %}
@@ -141,62 +134,62 @@ abstract class Crumble::Resource
 
   macro render(tpl)
     {% if tpl.is_a?(Path) && tpl.resolve < Crumble::ContextView %}
-      %tpl = {{tpl}}.new(ctx: handler_context)
+      %tpl = {{tpl}}.new(ctx: ctx)
     {% else %}
       %tpl = {{tpl}}
     {% end %}
 
-    @ctx.response.headers["Content-Type"] = "text/html"
+    ctx.response.headers["Content-Type"] = "text/html"
 
     if %layout = resource_layout
-      %layout.to_html(@ctx.response) do |io, indent_level|
+      %layout.to_html(ctx.response) do |io, indent_level|
         %tpl.to_html(io, indent_level)
       end
     else
       if %tpl.responds_to?(:to_html)
-        %tpl.to_html(@ctx.response)
+        %tpl.to_html(ctx.response)
       else
-        %tpl.to_s(@ctx.response)
+        %tpl.to_s(ctx.response)
       end
     end
   end
 
   def redirect(new_path)
-    @ctx.response.status_code = 303
-    @ctx.response.headers["Location"] = new_path
+    ctx.response.status_code = 303
+    ctx.response.headers["Location"] = new_path
   end
 
   def redirect_back(fallback_path)
-    redirect(@ctx.request.headers["Referer"]? || fallback_path)
+    redirect(ctx.request.headers["Referer"]? || fallback_path)
   end
 
   def index
-    @ctx.response.status_code = 404
-    @ctx.response.print "Not Found"
+    ctx.response.status_code = 404
+    ctx.response.print "Not Found"
   end
 
   def show
-    @ctx.response.status_code = 404
-    @ctx.response.print "Not Found"
+    ctx.response.status_code = 404
+    ctx.response.print "Not Found"
   end
 
   def create
-    @ctx.response.status_code = 404
-    @ctx.response.print "Not Found"
+    ctx.response.status_code = 404
+    ctx.response.print "Not Found"
   end
 
   def update
-    @ctx.response.status_code = 404
-    @ctx.response.print "Not Found"
+    ctx.response.status_code = 404
+    ctx.response.print "Not Found"
   end
 
   def destroy
-    @ctx.response.status_code = 404
-    @ctx.response.print "Not Found"
+    ctx.response.status_code = 404
+    ctx.response.print "Not Found"
   end
 
   def id?
-    self.class.match(@ctx.request.path).try { |m| m[2]?.try(&.to_i64) }
+    self.class.match(ctx.request.path).try { |m| m[2]?.try(&.to_i64) }
   end
 
   def id
