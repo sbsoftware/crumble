@@ -15,7 +15,7 @@ class Crumble::Server::RootRequestHandler
   def call(context : HTTP::Server::Context)
     ctx = RequestContext.new(context)
 
-    return if AssetFile.handle(ctx)
+    return if AssetFileRegistry.handle(ctx)
 
     {% begin %}
       {% for request_handler in REQUEST_HANDLERS %}
