@@ -1,5 +1,29 @@
 require "uri/params/serializable"
 
+# TODO: Remove this as soon as it is fixed in Crystal itself
+module URI::Params::Serializable
+  macro included
+    # :nodoc:
+    def initialize(*, __uri_params params : ::URI::Params, name : String?)
+      {% verbatim do %}
+      {% begin %}
+        {% for ivar, idx in @type.instance_vars %}
+          %name{idx} = name.nil? ? {{ivar.name.stringify}} : "#{name}[#{{{ivar.name.stringify}}}]"
+          %value{idx} = {{(ann = ivar.annotation(URI::Params::Field)) && (converter = ann["converter"]) ? converter : ivar.type}}.from_www_form params, %name{idx}
+          unless %value{idx}.nil?
+            @{{ivar.name.id}} = %value{idx}
+          else
+            {% unless ivar.type.resolve.nilable? || ivar.has_default_value? %}
+              raise URI::SerializableError.new "Missing required property: '#{%name{idx}}'."
+            {% end %}
+          end
+        {% end %}
+      {% end %}
+      {% end %}
+    end
+  end
+end
+
 module Crumble
   abstract class Form
     include URI::Params::Serializable
@@ -9,8 +33,18 @@ module Crumble
 
     getter errors : Array(String)?
 
-    macro field(type_decl)
-      @[Field]
+    def initialize(**values : **T) forall T
+      {% for key in T.keys.map(&.id) %}
+        {% if ivar = @type.instance_vars.find { |iv| iv.name == key } %}
+          @{{key}} = values[{{key.symbolize}}]
+        {% else %}
+          {% key.raise "Not a field: #{key}" %}
+        {% end %}
+      {% end %}
+    end
+
+    macro field(type_decl, *, type = nil)
+      @[Field(type: {{(type || :text).id.symbolize}})]
       {% if type_decl.type.resolve.nilable? %}
         @[Nilable]
       {% end %}
@@ -51,6 +85,12 @@ module Crumble
             {{var}}: %field{var.name},
           {% end %}
         }
+      {% end %}
+    end
+
+    ToHtml.instance_template do
+      {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+        input type: {{ivar.annotation(Field)[:type]}}, name: {{ivar.name.stringify}}, value: {{ivar.name.id}}.to_s
       {% end %}
     end
   end
