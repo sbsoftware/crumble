@@ -1,6 +1,7 @@
 require "spec"
 require "../src/crumble"
 require "./test_request_context"
+require "./test_handler_context"
 
 class String
   def squish
