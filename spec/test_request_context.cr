@@ -8,4 +8,8 @@ class Crumble::Server::TestRequestContext < Crumble::Server::RequestContext
     @original_context = HTTP::Server::Context.new(request, response)
     @session_store = session_store || MemorySessionStore.new
   end
+
+  def session_store
+    @session_store
+  end
 end
