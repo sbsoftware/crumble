@@ -21,6 +21,8 @@ class Crumble::Server::SessionKey
   @[YAML::Field(converter: Crumble::Server::SessionKey::UUIDConverter)]
   getter id : UUID
 
+  delegate :hash, to: id
+
   def initialize(@id)
   end
 
