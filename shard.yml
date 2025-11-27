@@ -5,6 +5,8 @@ dependencies:
   to_html:
     github: sbsoftware/to_html.cr
     version: ">= 1.5.0"
+  css:
+    github: sbsoftware/css.cr
   js:
     github: sbsoftware/js.cr
   opentelemetry-sdk:

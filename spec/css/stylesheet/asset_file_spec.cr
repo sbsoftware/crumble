@@ -2,10 +2,8 @@ require "../../spec_helper"
 
 module CSS::Stylesheet::AssetFileSpec
   class MyStyle < CSS::Stylesheet
-    rules do
-      rule div do
-        fontSize 12.px
-      end
+    rule div do
+      font_size 12.px
     end
   end
 

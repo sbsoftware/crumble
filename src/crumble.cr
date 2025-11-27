@@ -1,7 +1,7 @@
 require "to_html"
+require "css"
 require "./ext/**"
 require "./util/*"
-require "./css"
 require "./context_view"
 require "./server/session"
 require "./server/memory_session_store"
