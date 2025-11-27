@@ -1,5 +1,6 @@
 require "to_html"
 require "css"
+require "./macros"
 require "./ext/**"
 require "./util/*"
 require "./context_view"
