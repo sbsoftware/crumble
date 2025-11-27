@@ -30,15 +30,22 @@ module Crumble
       server = HTTP::Server.new(middlewares)
 
       address = server.bind_tcp "0.0.0.0", port
+      # Save the bound port so later calls (e.g. host) report the actual listening port,
+      # including cases where the user asked for port 0 and the OS picked an ephemeral one.
+      @@port = address.port
       puts "Listening on http://#{address}"
       server.listen
     end
 
     def host : String
-      ENV.fetch("CRUMBLE_HOST", "localhost")
+      # Prefer explicit override, otherwise derive a self-documenting local URL using the real port.
+      ENV.fetch("CRUMBLE_HOST") { "http://localhost:#{port}" }
     end
 
     def port : Int32
+      # If we already bound, keep using that port instead of re-running option parsing.
+      return @@port.not_nil! if @@port
+
       OptionParser.parse do |opts|
         opts.on("-p PORT", "--port PORT", "define port to run server") do |opt|
           @@port = opt.to_i
