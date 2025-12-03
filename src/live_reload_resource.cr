@@ -11,8 +11,9 @@
       ctx.response.headers["X-Accel-Buffering"] = "no"
 
       ctx.response.upgrade do |io|
-        io.as(TCPSocket).blocking = true
-        io.as(TCPSocket).sync = true
+        socket = io.as(TCPSocket)
+        Socket.set_blocking(socket.fd, true)
+        socket.sync = true
 
         loop do
           io << "data: "

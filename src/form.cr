@@ -1,29 +1,5 @@
 require "uri/params/serializable"
 
-# TODO: Remove this as soon as it is fixed in Crystal itself
-module URI::Params::Serializable
-  macro included
-    # :nodoc:
-    def initialize(*, __uri_params params : ::URI::Params, name : String?)
-      {% verbatim do %}
-      {% begin %}
-        {% for ivar, idx in @type.instance_vars %}
-          %name{idx} = name.nil? ? {{ivar.name.stringify}} : "#{name}[#{{{ivar.name.stringify}}}]"
-          %value{idx} = {{(ann = ivar.annotation(URI::Params::Field)) && (converter = ann["converter"]) ? converter : ivar.type}}.from_www_form params, %name{idx}
-          unless %value{idx}.nil?
-            @{{ivar.name.id}} = %value{idx}
-          else
-            {% unless ivar.type.resolve.nilable? || ivar.has_default_value? %}
-              raise URI::SerializableError.new "Missing required property: '#{%name{idx}}'."
-            {% end %}
-          end
-        {% end %}
-      {% end %}
-      {% end %}
-    end
-  end
-end
-
 module Crumble
   abstract class Form
     include URI::Params::Serializable
