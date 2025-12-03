@@ -74,10 +74,6 @@ abstract class Crumble::Resource
     "/" + self.name.chomp("Resource").gsub("::", "/").underscore
   end
 
-  def self.root_path(id : Nil)
-    ""
-  end
-
   def self.root_path(id)
     "#{root_path}/#{id}"
   end
@@ -86,20 +82,21 @@ abstract class Crumble::Resource
     ""
   end
 
-  def self.uri_path
-    root_path
-  end
-
-  def self.uri_path(id : Nil)
-    ""
-  end
-
-  def self.uri_path(id)
-    "#{root_path(id)}#{nested_path}"
+  def self.uri_path(id = nil)
+    path = root_path
+    if id
+      path += "/#{id}"
+      path += nested_path
+    end
+    path
   end
 
   def self.uri_path_matcher
-    /^#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
+    if nested_path.empty?
+      /^#{root_path}(\/|\/(\d+))?$/
+    else
+      /^#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
+    end
   end
 
   def initialize(@request_ctx); end

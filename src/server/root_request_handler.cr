@@ -1,6 +1,7 @@
 require "http/server/handler"
 require "./request_context"
 require "../asset_file"
+require "../page"
 require "../resource"
 
 class Crumble::Server::RootRequestHandler
@@ -17,6 +18,13 @@ class Crumble::Server::RootRequestHandler
 
     return if AssetFileRegistry.handle(ctx)
 
+    {% begin %}
+      {% for page_class in Page.all_subclasses %}
+        {% if !page_class.abstract? %}
+          return if {{page_class}}.handle(ctx)
+        {% end %}
+      {% end %}
+    {% end %}
     {% begin %}
       {% for request_handler in REQUEST_HANDLERS %}
         return if {{request_handler}}.handle(ctx)
