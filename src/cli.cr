@@ -15,6 +15,8 @@ class Crumble::CLI
 
   @command : Command?
   @name : String? = parse_shard_name
+  # 0 = OS-chosen port
+  @local_port : String? = "0"
   @verbose = false
 
   def initialize
@@ -25,6 +27,9 @@ class Crumble::CLI
         parser.banner = "Usage: crumble init [options]"
         parser.on "-n", "--name NAME", "The name of the main executable" do |name|
           @name = name
+        end
+        parser.on "-p", "--port PORT", "Local port the server started by watch.sh will listen to" do |port|
+          @local_port = port
         end
         parser.on "--help", "Print out help" do
           puts parser
@@ -63,6 +68,8 @@ class Crumble::CLI
     ensure_file("#{RESOURCES_FOLDER}/application_resource.cr", {{read_file "#{__DIR__}/cli/templates/application_resource.cr"}})
     ensure_file("#{RESOURCES_FOLDER}/root_resource.cr", {{read_file "#{__DIR__}/cli/templates/root_resource.cr"}})
     ensure_file("#{STYLES_FOLDER}/application_style.cr", {{read_file "#{__DIR__}/cli/templates/application_style.cr"}})
+
+    ensure_file("watch.sh", "#/bin/sh\n\nlib/crumble/src/watch.sh #{@name} #{@local_port}\n", 0o755)
   end
 
   def log_verbose(str)
@@ -82,12 +89,13 @@ class Crumble::CLI
     end
   end
 
-  def ensure_file(path, default_contents)
+  def ensure_file(path, default_contents, mode : Int32? = nil)
     if File.exists?(path)
       log_verbose "#{path} already exists" if @verbose
     else
       log_verbose "Creating #{path}" if @verbose
       File.write path, default_contents
+      File.chmod(path, mode) if mode
     end
   end
 
