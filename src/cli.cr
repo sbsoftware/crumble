@@ -68,10 +68,10 @@ class Crumble::CLI
     ensure_file("#{CRUMBLE_FOLDER}/session.cr", {{read_file "#{__DIR__}/cli/templates/session.cr"}})
     ensure_file("#{CRUMBLE_FOLDER}/request_context.cr", {{read_file "#{__DIR__}/cli/templates/request_context.cr"}})
     ensure_file("#{RESOURCES_FOLDER}/application_resource.cr", {{read_file "#{__DIR__}/cli/templates/application_resource.cr"}})
-    ensure_file("#{RESOURCES_FOLDER}/root_resource.cr", {{read_file "#{__DIR__}/cli/templates/root_resource.cr"}})
     ensure_file("#{STYLES_FOLDER}/application_style.cr", {{read_file "#{__DIR__}/cli/templates/application_style.cr"}})
     ensure_file("#{VIEWS_FOLDER}/application_layout.cr", {{read_file "#{__DIR__}/cli/templates/application_layout.cr"}})
     ensure_file("#{PAGES_FOLDER}/application_page.cr", {{read_file "#{__DIR__}/cli/templates/application_page.cr"}})
+    ensure_file("#{PAGES_FOLDER}/welcome_page.cr", {{read_file "#{__DIR__}/cli/templates/welcome_page.cr"}})
 
     ensure_file("watch.sh", "#/bin/sh\n\nlib/crumble/src/watch.sh #{@name} #{@local_port}\n", 0o755)
   end
