@@ -1,3 +1,3 @@
 class ApplicationResource < Crumble::Resource
-  layout ToHtml::Layout
+  layout ApplicationLayout
 end
