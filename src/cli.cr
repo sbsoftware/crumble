@@ -6,12 +6,13 @@ class Crumble::CLI
     Init
   end
 
-  SRC_FOLDER = "src"
-  CRUMBLE_FOLDER = Path.new(SRC_FOLDER, "crumble")
-  MODELS_FOLDER = Path.new(SRC_FOLDER, "models")
-  VIEWS_FOLDER = Path.new(SRC_FOLDER, "views")
+  SRC_FOLDER       = "src"
+  CRUMBLE_FOLDER   = Path.new(SRC_FOLDER, "crumble")
+  MODELS_FOLDER    = Path.new(SRC_FOLDER, "models")
+  VIEWS_FOLDER     = Path.new(SRC_FOLDER, "views")
   RESOURCES_FOLDER = Path.new(SRC_FOLDER, "resources")
-  STYLES_FOLDER = Path.new(SRC_FOLDER, "styles")
+  STYLES_FOLDER    = Path.new(SRC_FOLDER, "styles")
+  PAGES_FOLDER     = Path.new(SRC_FOLDER, "pages")
 
   @command : Command?
   @name : String? = parse_shard_name
@@ -56,6 +57,7 @@ class Crumble::CLI
     ensure_dir(VIEWS_FOLDER)
     ensure_dir(RESOURCES_FOLDER)
     ensure_dir(STYLES_FOLDER)
+    ensure_dir(PAGES_FOLDER)
     overwrite_file("#{SRC_FOLDER}/crumble_server.cr", {{read_file "#{__DIR__}/cli/templates/crumble_server.cr"}})
     if @name
       overwrite_file("#{SRC_FOLDER}/#{@name}.cr", {{read_file "#{__DIR__}/cli/templates/main.cr"}})
