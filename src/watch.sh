@@ -8,7 +8,11 @@ BIN_FILENAME="bin/$PROJ_FILENAME"
 watchexec -r -w src -w lib -e cr --no-vcs-ignore "crystal build --error-trace $SRC_FILENAME -o $BIN_FILENAME" &
 COMPILE_PID=$!
 
-watchexec -r -w "./bin" -f $PROJ_FILENAME --fs-events metadata --no-vcs-ignore "DATABASE_URL=sqlite3://./data.db ORMA_CONTINUOUS_MIGRATION=1 LOG_LEVEL=trace $BIN_FILENAME -p $PORT" &
+export DATABASE_URL="${DATABASE_URL:-sqlite3://./data.db}"
+export ORMA_CONTINUOUS_MIGRATION="${ORMA_CONTINUOUS_MIGRATION:-1}"
+export LOG_LEVEL="${LOG_LEVEL:-trace}"
+
+watchexec -r -w "./bin" -f $PROJ_FILENAME --fs-events metadata --no-vcs-ignore "$BIN_FILENAME -p $PORT" &
 RUN_PID=$!
 
 cleanup() {
