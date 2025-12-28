@@ -25,6 +25,8 @@ module Crumble
         @[Nilable]
       {% end %}
       getter {{type_decl.var}} : {{type_decl.type}}?
+
+      css_id {{type_decl.var.id.stringify.camelcase.id}}FieldId
     end
 
     def valid?
@@ -66,7 +68,9 @@ module Crumble
 
     ToHtml.instance_template do
       {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-        input type: {{ivar.annotation(Field)[:type]}}, name: {{ivar.name.stringify}}, value: {{ivar.name.id}}.to_s
+        label {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId do
+          {{ivar.name.stringify}}.capitalize
+        end; input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId, type: {{ivar.annotation(Field)[:type]}}, name: {{ivar.name.stringify}}, value: {{ivar.name.id}}.to_s
       {% end %}
     end
   end
