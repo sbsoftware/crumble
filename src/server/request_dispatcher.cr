@@ -4,7 +4,7 @@ require "../asset_file"
 require "../page"
 require "../resource"
 
-class Crumble::Server::RootRequestHandler
+class Crumble::Server::RequestDispatcher
   include HTTP::Handler
 
   REQUEST_HANDLERS = [] of Class.class

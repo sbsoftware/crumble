@@ -1,4 +1,4 @@
-require "./root_request_handler"
+require "./request_dispatcher"
 require "./log_handler"
 require "./open_telemetry_handler"
 require "http/server"
@@ -23,7 +23,7 @@ module Crumble
     end
 
     def middlewares
-      [log_middleware, open_telemetry_handler, RootRequestHandler.new].compact
+      [log_middleware, open_telemetry_handler, RequestDispatcher.new].compact
     end
 
     def start
