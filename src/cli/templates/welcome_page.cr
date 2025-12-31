@@ -1,7 +1,5 @@
 class WelcomePage < ApplicationPage
-  def self.root_path
-    "/"
-  end
+  root_path "/"
 
   view do
     template do
