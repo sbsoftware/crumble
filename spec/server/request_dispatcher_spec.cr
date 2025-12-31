@@ -9,16 +9,14 @@ end
 
 module Crumble::Server::RequestDispatcherPageSpec
   class HomePage < Crumble::Page
+    root_path "/root-handler-page"
+
     view do
       template do
         html do
           body { "page handled" }
         end
       end
-    end
-
-    def self.root_path
-      "/root-handler-page"
     end
   end
 

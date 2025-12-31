@@ -204,7 +204,7 @@ describe Crumble::Page do
 
   it "renders the id when present in the path" do
     res = String.build do |io|
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::IdPage.uri_path(42))
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::IdPage.uri_path(id: 42))
       Crumble::PageSpec::IdPage.handle(ctx).should eq(true)
       ctx.response.flush
     end
@@ -213,13 +213,12 @@ describe Crumble::Page do
   end
 
   it "builds uri_path including nested paths" do
-    Crumble::PageSpec::NestedPage.uri_path(7).should eq("#{Crumble::PageSpec::NestedPage.root_path}/7#{Crumble::PageSpec::NestedPage.nested_path}")
+    Crumble::PageSpec::NestedPage.uri_path(id: 7).should eq("#{Crumble::PageSpec::NestedPage._root_path}/7/details")
   end
 
   it "matches nested paths when handling requests" do
     res = String.build do |io|
-      path = "#{Crumble::PageSpec::NestedPage.root_path}/123#{Crumble::PageSpec::NestedPage.nested_path}"
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: path)
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::NestedPage.uri_path(id: 123))
       Crumble::PageSpec::NestedPage.handle(ctx).should eq(true)
       ctx.response.flush
     end
@@ -233,14 +232,14 @@ describe Crumble::Page do
   end
 
   it "allows overriding the derived root path via root_path macro" do
-    Crumble::PageSpec::CustomRootPathPage.root_path.should eq("/custom")
+    Crumble::PageSpec::CustomRootPathPage._root_path.should eq("/custom")
     Crumble::PageSpec::CustomRootPathPage.match("/custom").should be_truthy
     Crumble::PageSpec::CustomRootPathPage.match("/custom/123").should be_falsey
   end
 
   it "supports multiple path_param and nested_path segments" do
     res = String.build do |io|
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: "/multi/123/abc-9/edit/details")
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::MultiParamPage.uri_path(account_id: 123, slug: "abc-9"))
       Crumble::PageSpec::MultiParamPage.handle(ctx).should eq(true)
       ctx.response.flush
     end
@@ -251,14 +250,14 @@ describe Crumble::Page do
 
   it "supports path_param names as Symbol or String literals" do
     res = String.build do |io|
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::SymbolNameParamPage.uri_path(9))
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::SymbolNameParamPage.uri_path(id: 9))
       Crumble::PageSpec::SymbolNameParamPage.handle(ctx).should eq(true)
       ctx.response.flush
     end
     res.should contain("Symbol ID: 9")
 
     res = String.build do |io|
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::StringNameParamPage.uri_path(11))
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::StringNameParamPage.uri_path(id: 11))
       Crumble::PageSpec::StringNameParamPage.handle(ctx).should eq(true)
       ctx.response.flush
     end
