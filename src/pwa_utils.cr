@@ -64,7 +64,7 @@ end
 #   # Path must be provided relative to the project directory
 #   Icon = PNGFile.register "icon.png", "assets/icon.png"
 #
-#   icon Icon, sizes: "192x192"
+#   icon Icon, sizes: "192x192", purpose: :maskable
 #
 #   Screenshot = JPGFile.register "screenshot.jpg", "assets/screenshot.jpg"
 #
