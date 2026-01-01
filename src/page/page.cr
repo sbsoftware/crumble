@@ -8,6 +8,21 @@ abstract class Crumble::Page
     "Page"
   end
 
+  macro before(&blk)
+    def _before : Bool | Int32
+      {% if @type.has_method?("_before") %}
+        {% if @type.methods.map(&.name).includes?("_before") %}
+          prev = previous_def
+        {% else %}
+          prev = super
+        {% end %}
+        return prev unless prev == true
+      {% end %}
+
+      {{blk.body}}
+    end
+  end
+
   macro view(klass = nil, &blk)
     {% raise "Pass a view class or a block, not both" if klass && blk %}
     {% unless klass || blk %}{% raise "Provide a view class or block" %}{% end %}
@@ -66,6 +81,16 @@ abstract class Crumble::Page
     return false unless ctx.request.method == "GET"
 
     instance = new(ctx)
+    if instance.responds_to? :_before
+      ret_val = instance._before
+      if ret_val == false
+        ctx.response.status = :bad_request
+        return true
+      elsif ret_val.is_a?(Int32)
+        ctx.response.status_code = ret_val
+        return true
+      end
+    end
     instance.call
     true
   end
