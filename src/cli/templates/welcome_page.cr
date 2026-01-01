@@ -4,7 +4,7 @@ class WelcomePage < ApplicationPage
   end
 
   view do
-    ToHtml.class_template do
+    template do
       h1 { "Welcome to the Crumble framework!" }
     end
   end
