@@ -41,6 +41,11 @@ require "css"
 class ArticlesPage < Crumble::Page
   layout ToHtml::Layout
 
+  before do
+    # Return `true` to continue, `false` for 400, or an Int32 HTTP status code.
+    ctx.request.headers["X-Auth"]? == "1" ? true : 401
+  end
+
   view do
     css_class ArticleListBox
 
@@ -79,6 +84,31 @@ end
 
 - Pass a class to `view(SomeView)` if you prefer a reusable component.
 - `layout SomeLayout` can reference an existing layout class, which is just something with a `#to_html(io : IO)` method that yields; when omitted, the view renders bare.
+- Use `before { ... }` to short-circuit with `false` (400) or an `Int32` status code.
+
+#### Path matching
+
+Pages can declare URL parameters and nested segments with path-matching macros:
+
+```crystal
+class AccountPostDetailsPage < Crumble::Page
+  root_path "/accounts"
+  path_param account_id
+  path_param slug, /[a-z0-9-]+/
+  nested_path "posts"
+  nested_path "details"
+
+  view do
+    template do
+      page = ctx.handler.as(AccountPostDetailsPage)
+      p { "account_id=#{page.account_id} slug=#{page.slug}" }
+    end
+  end
+end
+
+AccountPostDetailsPage.uri_path(account_id: 123, slug: "hello-world")
+# => /accounts/123/hello-world/posts/details
+```
 
 ### Resources
 
