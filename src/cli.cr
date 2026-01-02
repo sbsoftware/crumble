@@ -74,6 +74,7 @@ class Crumble::CLI
     ensure_file("#{PAGES_FOLDER}/welcome_page.cr", {{read_file "#{__DIR__}/cli/templates/welcome_page.cr"}})
 
     ensure_file("watch.sh", "#!/usr/bin/env sh\n\nlib/crumble/src/watch.sh #{@name} #{@local_port}\n", 0o755)
+    ensure_file("AGENTS.md", {{read_file "#{__DIR__}/cli/templates/AGENTS.md"}})
   end
 
   def log_verbose(str)
