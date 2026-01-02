@@ -36,3 +36,5 @@ Crumble builds on a few helper shards. Prefer their typed DSLs over stringly-typ
 - `opentelemetry-sdk` — tracing backend used by Crumble’s OpenTelemetry middleware. Configure exporters/providers in the app if traces are desired.
 
 If you `require "to_html"`, `require "css"`, or `require "js"` in app code, consider listing them as direct dependencies in `shard.yml` (not only transitively via `crumble`) so version pinning stays explicit.
+
+Some helper shards may ship their own agent guidance; after `shards install`, check for project-local instructions in `lib/*/AGENTS.md` (for example `lib/crumble/AGENTS.md`, `lib/to_html/AGENTS.md`, `lib/css/AGENTS.md`, `lib/js/AGENTS.md`).
