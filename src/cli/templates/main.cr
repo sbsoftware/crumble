@@ -1,1 +1,3 @@
-require "./crumble_server"
+require "./environment"
+
+Crumble::Server.start
