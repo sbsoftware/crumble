@@ -58,7 +58,7 @@ class Crumble::CLI
     ensure_dir(RESOURCES_FOLDER)
     ensure_dir(STYLES_FOLDER)
     ensure_dir(PAGES_FOLDER)
-    overwrite_file("#{SRC_FOLDER}/crumble_server.cr", {{read_file "#{__DIR__}/cli/templates/crumble_server.cr"}})
+    overwrite_file("#{SRC_FOLDER}/environment.cr", {{read_file "#{__DIR__}/cli/templates/environment.cr"}})
     if @name
       overwrite_file("#{SRC_FOLDER}/#{@name}.cr", {{read_file "#{__DIR__}/cli/templates/main.cr"}})
     else
