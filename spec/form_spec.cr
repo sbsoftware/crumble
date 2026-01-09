@@ -26,6 +26,7 @@ class Crumble::FormSpec
 
   describe "DefaultForm#to_html" do
     it "should return the correct HTML" do
+      ctx = test_handler_context
       expected = <<-HTML.squish
       <label for="crumble--form-spec--default-form--a-field-id">A</label>
       <input id="crumble--form-spec--default-form--a-field-id" type="hidden" name="a" value="Blah">
@@ -33,12 +34,13 @@ class Crumble::FormSpec
       <input id="crumble--form-spec--default-form--b-field-id" type="text" name="b" value="">
       HTML
 
-      DefaultForm.new(a: "Blah", b: nil).to_html.should eq(expected)
+      DefaultForm.new(ctx, a: "Blah", b: nil).to_html.should eq(expected)
     end
   end
 
   describe "LabeledForm#to_html" do
     it "should support custom and nil labels" do
+      ctx = test_handler_context
       expected = <<-HTML.squish
       <label for="crumble--form-spec--labeled-form--a-field-id">Custom A</label>
       <input id="crumble--form-spec--labeled-form--a-field-id" type="hidden" name="a" value="Blah">
@@ -47,12 +49,13 @@ class Crumble::FormSpec
       <input id="crumble--form-spec--labeled-form--c-field-id" type="text" name="c" value="foo">
       HTML
 
-      LabeledForm.new(a: "Blah", b: nil, c: "foo").to_html.should eq(expected)
+      LabeledForm.new(ctx, a: "Blah", b: nil, c: "foo").to_html.should eq(expected)
     end
   end
 
   describe "CustomDefaultLabelForm#to_html" do
     it "should allow overriding default label behavior" do
+      ctx = test_handler_context
       expected = <<-HTML.squish
       <label for="crumble--form-spec--custom-default-label-form--a-field-id">I18n.a</label>
       <input id="crumble--form-spec--custom-default-label-form--a-field-id" type="text" name="a" value="x">
@@ -60,13 +63,13 @@ class Crumble::FormSpec
       <input id="crumble--form-spec--custom-default-label-form--b-field-id" type="text" name="b" value="y">
       HTML
 
-      CustomDefaultLabelForm.new(a: "x", b: "y").to_html.should eq(expected)
+      CustomDefaultLabelForm.new(ctx, a: "x", b: "y").to_html.should eq(expected)
     end
   end
 
   describe "EmptyForm#to_html" do
     it "should return an empty string" do
-      EmptyForm.new.to_html.should eq("")
+      EmptyForm.new(test_handler_context).to_html.should eq("")
     end
   end
 end

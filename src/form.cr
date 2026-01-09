@@ -1,21 +1,39 @@
-require "uri/params/serializable"
+require "uri"
+require "uri/params/from_www_form"
 
 module Crumble
   abstract class Form
-    include URI::Params::Serializable
-
     annotation Field; end
     annotation Nilable; end
 
+    getter ctx : Crumble::Server::HandlerContext
     getter errors : Array(String)?
 
-    def initialize(**values : **T) forall T
+    def initialize(@ctx : Crumble::Server::HandlerContext, **values : **T) forall T
       {% for key in T.keys.map(&.id) %}
         {% if ivar = @type.instance_vars.find { |iv| iv.name == key } %}
           @{{key}} = values[{{key.symbolize}}]
         {% else %}
           {% key.raise "Not a field: #{key}" %}
         {% end %}
+      {% end %}
+    end
+
+    def self.from_www_form(ctx : Crumble::Server::HandlerContext, www_form : ::String) : self
+      from_www_form(ctx, ::URI::Params.parse(www_form))
+    end
+
+    def self.from_www_form(ctx : Crumble::Server::HandlerContext, params : ::URI::Params) : self
+      {% begin %}
+        {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+          %field{ivar.name} = {{ivar.type}}.from_www_form(params, {{ivar.name.stringify}})
+        {% end %}
+
+        new(ctx,
+          {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+            {{ivar.name.id}}: %field{ivar.name},
+          {% end %}
+        )
       {% end %}
     end
 
