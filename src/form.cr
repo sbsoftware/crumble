@@ -69,8 +69,6 @@ module Crumble
           {% end %}
         end
       {% end %}
-
-      default_label_caption(field)
     end
 
     def valid?
