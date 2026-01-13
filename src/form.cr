@@ -110,9 +110,16 @@ module Crumble
 
     ToHtml.instance_template do
       {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-        if %label_caption = label_caption_for(:{{ivar.name}}); label {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId do
-          %label_caption
-        end; end; input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId, type: {{ivar.annotation(Field)[:type]}}, name: {{ivar.name.stringify}}, value: {{ivar.name.id}}.to_s
+        if %label_caption = label_caption_for(:{{ivar.name}})
+          label {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId do
+            %label_caption
+          end
+        end
+
+        input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId,
+          type: {{ivar.annotation(Field)[:type]}},
+          name: {{ivar.name.stringify}},
+          value: {{ivar.name.id}}.to_s
       {% end %}
     end
   end
