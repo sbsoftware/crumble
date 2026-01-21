@@ -11,7 +11,7 @@ abstract class Crumble::Resource
     {% for action in actions %}
       def _before_{{action.id}}
         {% if @type.has_method?("_before_#{action.id}") %}
-          {% if @type.methods.map(&.name).includes?("_before_#{action.id}") %}
+          {% if @type.methods.map(&.name.id.stringify).includes?("_before_#{action.id}") %}
             prev = previous_def
           {% else %}
             prev = super

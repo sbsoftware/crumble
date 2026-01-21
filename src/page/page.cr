@@ -11,7 +11,7 @@ abstract class Crumble::Page
   macro before(&blk)
     def _before : Bool | Int32
       {% if @type.has_method?("_before") %}
-        {% if @type.methods.map(&.name).includes?("_before") %}
+        {% if @type.methods.map(&.name.id.stringify).includes?("_before") %}
           prev = previous_def
         {% else %}
           prev = super
