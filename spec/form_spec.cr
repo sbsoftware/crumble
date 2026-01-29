@@ -24,6 +24,28 @@ class Crumble::FormSpec
   class EmptyForm < Crumble::Form
   end
 
+  class TransformForm < Crumble::Form
+    field name : String do
+      before_render do |value|
+        value.upcase
+      end
+
+      after_submit do |value|
+        value.strip
+      end
+    end
+
+    field code : String? do
+      before_render do |value|
+        value.try(&.upcase)
+      end
+
+      after_submit do |value|
+        value.try(&.strip)
+      end
+    end
+  end
+
   describe "DefaultForm#to_html" do
     it "should return the correct HTML" do
       ctx = test_handler_context
@@ -70,6 +92,35 @@ class Crumble::FormSpec
   describe "EmptyForm#to_html" do
     it "should return an empty string" do
       EmptyForm.new(test_handler_context).to_html.should eq("")
+    end
+  end
+
+  describe "TransformForm" do
+    it "applies after_submit when assigning values" do
+      ctx = test_handler_context
+      form = TransformForm.new(ctx, name: "  Bob ", code: "  xy ")
+
+      form.values.should eq({name: "Bob", code: "xy"})
+    end
+
+    it "applies before_render when rendering values" do
+      ctx = test_handler_context
+      form = TransformForm.new(ctx, name: "  Bob ", code: "  xy ")
+      expected = <<-HTML.squish
+      <label for="crumble--form-spec--transform-form--name-field-id">Name</label>
+      <input id="crumble--form-spec--transform-form--name-field-id" type="text" name="name" value="BOB">
+      <label for="crumble--form-spec--transform-form--code-field-id">Code</label>
+      <input id="crumble--form-spec--transform-form--code-field-id" type="text" name="code" value="XY">
+      HTML
+
+      form.to_html.should eq(expected)
+    end
+
+    it "applies after_submit to values parsed from www form" do
+      ctx = test_handler_context
+      form = TransformForm.from_www_form(ctx, URI::Params.encode({name: "  Bob ", code: "  xy "}))
+
+      form.values.should eq({name: "Bob", code: "xy"})
     end
   end
 end

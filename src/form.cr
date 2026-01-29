@@ -12,7 +12,11 @@ module Crumble
     def initialize(@ctx : Crumble::Server::HandlerContext, **values : **T) forall T
       {% for key in T.keys.map(&.id) %}
         {% if ivar = @type.instance_vars.find { |iv| iv.name == key } %}
-          @{{key}} = values[{{key.symbolize}}]
+          {% if ivar.annotation(Field) %}
+            @{{key}} = __apply_after_submit_{{key}}(values[{{key.symbolize}}])
+          {% else %}
+            @{{key}} = values[{{key.symbolize}}]
+          {% end %}
         {% else %}
           {% key.raise "Not a field: #{key}" %}
         {% end %}
@@ -37,7 +41,84 @@ module Crumble
       {% end %}
     end
 
-    macro field(type_decl, *, type = nil, label = :__crumble_default__)
+    macro field(type_decl, *, type = nil, label = :__crumble_default__, &block)
+      {% before_render_block = nil %}
+      {% after_submit_block = nil %}
+
+      {% if block %}
+        {% if block.body.is_a?(Expressions) %}
+          {% statements = block.body.expressions %}
+        {% elsif block.body.is_a?(NilLiteral) %}
+          {% statements = [] of ASTNode %}
+        {% else %}
+          {% statements = [block.body] %}
+        {% end %}
+
+        {% for statement in statements %}
+          {% if statement.is_a?(Call) && statement.name == "before_render" %}
+            {% if before_render_block %}
+              {% statement.raise "before_render already defined for #{type_decl.var}" %}
+            {% end %}
+            {% unless statement.block %}
+              {% statement.raise "before_render must have a block" %}
+            {% end %}
+            {% if statement.block.args.size != 1 %}
+              {% statement.raise "before_render must accept exactly one argument" %}
+            {% end %}
+            {% before_render_block = statement.block %}
+          {% elsif statement.is_a?(Call) && statement.name == "after_submit" %}
+            {% if after_submit_block %}
+              {% statement.raise "after_submit already defined for #{type_decl.var}" %}
+            {% end %}
+            {% unless statement.block %}
+              {% statement.raise "after_submit must have a block" %}
+            {% end %}
+            {% if statement.block.args.size != 1 %}
+              {% statement.raise "after_submit must accept exactly one argument" %}
+            {% end %}
+            {% after_submit_block = statement.block %}
+          {% else %}
+            {% statement.raise "Only before_render and after_submit are allowed in a field block" %}
+          {% end %}
+        {% end %}
+      {% end %}
+
+      {% if before_render_block %}
+        private def __before_render_{{type_decl.var}}({{before_render_block.args[0].id}} : {{type_decl.type}}) : {{type_decl.type}}
+          {{before_render_block.body}}
+        end
+      {% end %}
+
+      {% if after_submit_block %}
+        private def __after_submit_{{type_decl.var}}({{after_submit_block.args[0].id}} : {{type_decl.type}}) : {{type_decl.type}}
+          {{after_submit_block.body}}
+        end
+      {% end %}
+
+      private def __apply_before_render_{{type_decl.var}}(value : {{type_decl.type}}?) : {{type_decl.type}}?
+        {% if before_render_block %}
+          {% if type_decl.type.resolve.nilable? %}
+            __before_render_{{type_decl.var}}(value)
+          {% else %}
+            value.nil? ? nil : __before_render_{{type_decl.var}}(value)
+          {% end %}
+        {% else %}
+          value
+        {% end %}
+      end
+
+      private def __apply_after_submit_{{type_decl.var}}(value : {{type_decl.type}}?) : {{type_decl.type}}?
+        {% if after_submit_block %}
+          {% if type_decl.type.resolve.nilable? %}
+            __after_submit_{{type_decl.var}}(value)
+          {% else %}
+            value.nil? ? nil : __after_submit_{{type_decl.var}}(value)
+          {% end %}
+        {% else %}
+          value
+        {% end %}
+      end
+
       {% if label == :__crumble_default__ %}
         @[Field(type: {{(type || :text).id.symbolize}})]
       {% else %}
@@ -46,6 +127,7 @@ module Crumble
       {% if type_decl.type.resolve.nilable? %}
         @[Nilable]
       {% end %}
+
       getter {{type_decl.var}} : {{type_decl.type}}?
 
       css_id {{type_decl.var.id.stringify.camelcase.id}}FieldId
@@ -91,7 +173,8 @@ module Crumble
 
     def values
       {% begin %}
-        {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+        {% fields = @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+        {% for var in fields %}
           %field{var.name} = @{{var}}
 
           {% unless var.annotation(Nilable) %}
@@ -100,11 +183,15 @@ module Crumble
             end
           {% end %}
         {% end %}
-        {
-          {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-            {{var}}: %field{var.name},
-          {% end %}
-        }
+        {% if fields.empty? %}
+          NamedTuple.new
+        {% else %}
+          {
+            {% for var in fields %}
+              {{var}}: %field{var.name},
+            {% end %}
+          }
+        {% end %}
       {% end %}
     end
 
@@ -119,7 +206,7 @@ module Crumble
         input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId,
           type: {{ivar.annotation(Field)[:type]}},
           name: {{ivar.name.stringify}},
-          value: {{ivar.name.id}}.to_s
+          value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
       {% end %}
     end
   end
