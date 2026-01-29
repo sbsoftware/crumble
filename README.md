@@ -171,6 +171,35 @@ end
 - `redirect` and `redirect_back` set a `303 See Other` by default.
 - Add `before` filters to short-circuit with `false` (400) or an `Int32` status code.
 
+### Forms
+
+`Crumble::Form` lets you define typed form fields, render them as inputs, and parse incoming values from URL-encoded form bodies.
+
+```crystal
+class ProfileForm < Crumble::Form
+  field name : String
+  field bio : String?, label: nil
+  field slug : String do
+    before_render do |value|
+      value.upcase
+    end
+
+    after_submit do |value|
+      value.strip
+    end
+  end
+end
+
+form = ProfileForm.from_www_form(ctx, ctx.request.body.try(&.gets_to_end) || "")
+form.valid? # => false if any non-nilable field is nil
+form.values # => {name: "...", bio: nil, slug: "..."}
+```
+
+- Each `field` supports `type:` and `label:` options for rendering.
+- Override `default_label_caption(field)` in your form to customize default label text.
+- `before_render` transforms a field value right before rendering its `<input>`.
+- `after_submit` transforms a field value whenever it is assigned (including `from_www_form`).
+
 ### Server & Routing
 
 - `Crumble::Server.start` boots an `HTTP::Server` with logging and optional OpenTelemetry tracing (`CRUMBLE_HOST` + `--port` flag control the bind address).
