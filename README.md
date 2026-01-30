@@ -176,8 +176,20 @@ end
 `Crumble::Form` lets you define typed form fields, render them as inputs, and parse incoming values from URL-encoded form bodies.
 
 ```crystal
+class ProfileNameController
+  def self.to_html_attrs(_tag, attrs)
+    attrs["data-controller"] = "profile"
+  end
+end
+
+class ProfileNameTarget
+  def self.to_html_attrs(_tag, attrs)
+    attrs["data-controller-target"] = "name"
+  end
+end
+
 class ProfileForm < Crumble::Form
-  field name : String
+  field name : String, attrs: [ProfileNameController, ProfileNameTarget]
   field bio : String?, label: nil
   field slug : String do
     before_render do |value|
@@ -195,7 +207,8 @@ form.valid? # => false if any non-nilable field is nil
 form.values # => {name: "...", bio: nil, slug: "..."}
 ```
 
-- Each `field` supports `type:` and `label:` options for rendering.
+- Each `field` supports `type:`, `label:`, and `attrs:` options for rendering.
+- `attrs:` accepts one or more attribute providers (implementing `to_html_attrs`) to add HTML attributes.
 - Override `default_label_caption(field)` in your form to customize default label text.
 - `before_render` transforms a field value right before rendering its `<input>`.
 - `after_submit` transforms a field value whenever it is assigned (including `from_www_form`).

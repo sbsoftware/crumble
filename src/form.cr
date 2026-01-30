@@ -41,9 +41,29 @@ module Crumble
       {% end %}
     end
 
-    macro field(type_decl, *, type = nil, label = :__crumble_default__, &block)
+    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, &block)
       {% before_render_block = nil %}
       {% after_submit_block = nil %}
+      {% field_name = nil %}
+      {% field_type = nil %}
+      {% field_attr_nodes = [] of ASTNode %}
+
+      {% unless type_decl.is_a?(TypeDeclaration) %}
+        {% type_decl.raise "Field must use a type declaration, e.g. field name : String" %}
+      {% end %}
+
+      {% field_name = type_decl.var %}
+      {% field_type = type_decl.type %}
+
+      {% if attrs.is_a?(NilLiteral) %}
+        {% field_attr_nodes = [] of ASTNode %}
+      {% elsif attrs.is_a?(ArrayLiteral) || attrs.is_a?(TupleLiteral) %}
+        {% for attr in attrs %}
+          {% field_attr_nodes << attr %}
+        {% end %}
+      {% else %}
+        {% field_attr_nodes << attrs %}
+      {% end %}
 
       {% if block %}
         {% if block.body.is_a?(Expressions) %}
@@ -57,7 +77,7 @@ module Crumble
         {% for statement in statements %}
           {% if statement.is_a?(Call) && statement.name == "before_render" %}
             {% if before_render_block %}
-              {% statement.raise "before_render already defined for #{type_decl.var}" %}
+              {% statement.raise "before_render already defined for #{field_name}" %}
             {% end %}
             {% unless statement.block %}
               {% statement.raise "before_render must have a block" %}
@@ -68,7 +88,7 @@ module Crumble
             {% before_render_block = statement.block %}
           {% elsif statement.is_a?(Call) && statement.name == "after_submit" %}
             {% if after_submit_block %}
-              {% statement.raise "after_submit already defined for #{type_decl.var}" %}
+              {% statement.raise "after_submit already defined for #{field_name}" %}
             {% end %}
             {% unless statement.block %}
               {% statement.raise "after_submit must have a block" %}
@@ -84,35 +104,35 @@ module Crumble
       {% end %}
 
       {% if before_render_block %}
-        private def __before_render_{{type_decl.var}}({{before_render_block.args[0].id}} : {{type_decl.type}}) : {{type_decl.type}}
+        private def __before_render_{{field_name.id}}({{before_render_block.args[0].id}} : {{field_type}}) : {{field_type}}
           {{before_render_block.body}}
         end
       {% end %}
 
       {% if after_submit_block %}
-        private def __after_submit_{{type_decl.var}}({{after_submit_block.args[0].id}} : {{type_decl.type}}) : {{type_decl.type}}
+        private def __after_submit_{{field_name.id}}({{after_submit_block.args[0].id}} : {{field_type}}) : {{field_type}}
           {{after_submit_block.body}}
         end
       {% end %}
 
-      private def __apply_before_render_{{type_decl.var}}(value : {{type_decl.type}}?) : {{type_decl.type}}?
+      private def __apply_before_render_{{field_name.id}}(value : {{field_type}}?) : {{field_type}}?
         {% if before_render_block %}
-          {% if type_decl.type.resolve.nilable? %}
-            __before_render_{{type_decl.var}}(value)
+          {% if field_type.resolve.nilable? %}
+            __before_render_{{field_name.id}}(value)
           {% else %}
-            value.nil? ? nil : __before_render_{{type_decl.var}}(value)
+            value.nil? ? nil : __before_render_{{field_name.id}}(value)
           {% end %}
         {% else %}
           value
         {% end %}
       end
 
-      private def __apply_after_submit_{{type_decl.var}}(value : {{type_decl.type}}?) : {{type_decl.type}}?
+      private def __apply_after_submit_{{field_name.id}}(value : {{field_type}}?) : {{field_type}}?
         {% if after_submit_block %}
-          {% if type_decl.type.resolve.nilable? %}
-            __after_submit_{{type_decl.var}}(value)
+          {% if field_type.resolve.nilable? %}
+            __after_submit_{{field_name.id}}(value)
           {% else %}
-            value.nil? ? nil : __after_submit_{{type_decl.var}}(value)
+            value.nil? ? nil : __after_submit_{{field_name.id}}(value)
           {% end %}
         {% else %}
           value
@@ -120,17 +140,25 @@ module Crumble
       end
 
       {% if label == :__crumble_default__ %}
-        @[Field(type: {{(type || :text).id.symbolize}})]
+        {% if field_attr_nodes.empty? %}
+          @[Field(type: {{(type || :text).id.symbolize}}, attrs: [] of Nil)]
+        {% else %}
+          @[Field(type: {{(type || :text).id.symbolize}}, attrs: [{{field_attr_nodes.splat}}])]
+        {% end %}
       {% else %}
-        @[Field(type: {{(type || :text).id.symbolize}}, label: {{label}})]
+        {% if field_attr_nodes.empty? %}
+          @[Field(type: {{(type || :text).id.symbolize}}, label: {{label}}, attrs: [] of Nil)]
+        {% else %}
+          @[Field(type: {{(type || :text).id.symbolize}}, label: {{label}}, attrs: [{{field_attr_nodes.splat}}])]
+        {% end %}
       {% end %}
-      {% if type_decl.type.resolve.nilable? %}
+      {% if field_type.resolve.nilable? %}
         @[Nilable]
       {% end %}
 
-      getter {{type_decl.var}} : {{type_decl.type}}?
+      getter {{field_name}} : {{field_type}}?
 
-      css_id {{type_decl.var.id.stringify.camelcase.id}}FieldId
+      css_id {{field_name.id.stringify.camelcase.id}}FieldId
     end
 
     # Returns the label caption for a field when no explicit `label:` was passed
@@ -203,8 +231,10 @@ module Crumble
           end
         end
 
-        input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId,
-          type: {{ivar.annotation(Field)[:type]}},
+        {% ann = ivar.annotation(Field) %}
+        {% attrs = ann.named_args[:attrs] %}
+        input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+          type: {{ann[:type]}},
           name: {{ivar.name.stringify}},
           value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
       {% end %}

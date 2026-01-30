@@ -46,6 +46,25 @@ class Crumble::FormSpec
     end
   end
 
+  class ControllerAttr
+    def self.to_html_attrs(_tag, attrs)
+      attrs["data-controller"] = "signup"
+    end
+  end
+
+  class TargetAttr
+    def self.to_html_attrs(_tag, attrs)
+      attrs["data-controller-target"] = "name"
+    end
+  end
+
+  class AttrForm < Crumble::Form
+    field name : String, attrs: [
+      Crumble::FormSpec::ControllerAttr,
+      Crumble::FormSpec::TargetAttr,
+    ]
+  end
+
   describe "DefaultForm#to_html" do
     it "should return the correct HTML" do
       ctx = test_handler_context
@@ -121,6 +140,18 @@ class Crumble::FormSpec
       form = TransformForm.from_www_form(ctx, URI::Params.encode({name: "  Bob ", code: "  xy "}))
 
       form.values.should eq({name: "Bob", code: "xy"})
+    end
+  end
+
+  describe "AttrForm#to_html" do
+    it "includes additional field attribute objects on the input element" do
+      ctx = test_handler_context
+      expected = <<-HTML.squish
+      <label for="crumble--form-spec--attr-form--name-field-id">Name</label>
+      <input id="crumble--form-spec--attr-form--name-field-id" data-controller="signup" data-controller-target="name" type="text" name="name" value="Bob">
+      HTML
+
+      AttrForm.new(ctx, name: "Bob").to_html.should eq(expected)
     end
   end
 end
