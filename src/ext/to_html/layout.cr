@@ -13,6 +13,40 @@ module ToHtml
       ctx.handler.window_title
     end
 
+    class OpenGraphMeta
+      include Crumble::ContextView
+
+      template do
+        handler = ctx.handler
+
+        if title = handler.og_title
+          meta property: "og:title", content: title
+        end
+
+        if description = handler.og_description
+          meta property: "og:description", content: description
+        end
+
+        if image = handler.og_image
+          meta property: "og:image", content: image
+        end
+
+        if url = handler.og_url
+          meta property: "og:url", content: url
+        end
+
+        if type = handler.og_type
+          meta property: "og:type", content: type
+        end
+
+        if site_name = handler.og_site_name
+          meta property: "og:site_name", content: site_name
+        end
+      end
+    end
+
+    append_to_head OpenGraphMeta.new(ctx: ctx)
+
     {% unless flag?(:release) %}
       class LiveReloadScript < JS::Code
         def_to_js do

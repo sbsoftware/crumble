@@ -110,6 +110,32 @@ AccountPostDetailsPage.uri_path(account_id: 123, slug: "hello-world")
 # => /accounts/123/hello-world/posts/details
 ```
 
+### Open Graph
+
+Layouts based on `ToHtml::Layout` render Open Graph meta tags when handlers define them.
+
+```crystal
+class InvitePage < Crumble::Page
+  layout ToHtml::Layout
+
+  view do
+    template { div { "Invite" } }
+  end
+
+  def og_title : String?
+    "Join my room"
+  end
+
+  def og_description : String?
+    "Quick invite with a preview."
+  end
+
+  def og_image : String?
+    "https://example.com/invite.png"
+  end
+end
+```
+
 ### Resources
 
 `Crumble::Resource` gives you RESTful handlers with sensible defaults for `index`, `show`, `create`, `update`, and `destroy`. Routing follows the class name (`CommentsResource` → `/comments`); nested paths are supported one level deep via `self.nested_path`.

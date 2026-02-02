@@ -11,5 +11,29 @@ module Crumble::Server
     end
 
     abstract def window_title : String?
+
+    def og_title : String?
+      nil
+    end
+
+    def og_description : String?
+      nil
+    end
+
+    def og_image : String?
+      nil
+    end
+
+    def og_url : String?
+      nil
+    end
+
+    def og_type : String?
+      nil
+    end
+
+    def og_site_name : String?
+      nil
+    end
   end
 end
