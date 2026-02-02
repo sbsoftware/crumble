@@ -46,6 +46,17 @@ class Crumble::FormSpec
     end
   end
 
+  class AllowBlankForm < Crumble::Form
+    field name : String, allow_blank: false do
+      after_submit do |value|
+        value.strip
+      end
+    end
+
+    field optional : String?, allow_blank: false
+    field count : Int32, allow_blank: false
+  end
+
   class ControllerAttr
     def self.to_html_attrs(_tag, attrs)
       attrs["data-controller"] = "signup"
@@ -152,6 +163,24 @@ class Crumble::FormSpec
       HTML
 
       AttrForm.new(ctx, name: "Bob").to_html.should eq(expected)
+    end
+  end
+
+  describe "AllowBlankForm" do
+    it "adds errors for empty strings after after_submit" do
+      ctx = test_handler_context
+      form = AllowBlankForm.new(ctx, name: "   ", optional: "", count: 1)
+
+      form.valid?.should be_false
+      form.errors.should eq(["name", "optional"])
+    end
+
+    it "ignores nil values and non-string fields" do
+      ctx = test_handler_context
+      form = AllowBlankForm.new(ctx, name: "Bob", optional: nil, count: 0)
+
+      form.valid?.should be_true
+      form.errors.should eq([] of String)
     end
   end
 end

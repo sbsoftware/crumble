@@ -41,7 +41,7 @@ module Crumble
       {% end %}
     end
 
-    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, &block)
+    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, allow_blank = true, &block)
       {% before_render_block = nil %}
       {% after_submit_block = nil %}
       {% field_name = nil %}
@@ -139,19 +139,12 @@ module Crumble
         {% end %}
       end
 
-      {% if label == :__crumble_default__ %}
-        {% if field_attr_nodes.empty? %}
-          @[Field(type: {{(type || :text).id.symbolize}}, attrs: [] of Nil)]
-        {% else %}
-          @[Field(type: {{(type || :text).id.symbolize}}, attrs: [{{field_attr_nodes.splat}}])]
-        {% end %}
-      {% else %}
-        {% if field_attr_nodes.empty? %}
-          @[Field(type: {{(type || :text).id.symbolize}}, label: {{label}}, attrs: [] of Nil)]
-        {% else %}
-          @[Field(type: {{(type || :text).id.symbolize}}, label: {{label}}, attrs: [{{field_attr_nodes.splat}}])]
-        {% end %}
-      {% end %}
+      @[Field(
+        type: {{(type || :text).id.symbolize}},
+        allow_blank: {{allow_blank}},
+        label: {{label}},
+        attrs: {% if field_attr_nodes.empty? %}[] of Nil{% else %}{{field_attr_nodes}}{% end %},
+      )]
       {% if field_type.resolve.nilable? %}
         @[Nilable]
       {% end %}
@@ -172,10 +165,11 @@ module Crumble
       {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
         if field == :{{ivar.name}}
           {% ann = ivar.annotation(Field) %}
-          {% if ann.named_args.has_key?(:label) %}
-            return {{ann.named_args[:label]}}
-          {% else %}
+          {% label_value = ann.named_args[:label] %}
+          {% if label_value == :__crumble_default__ %}
             return default_label_caption(:{{ivar.name}})
+          {% else %}
+            return {{label_value}}
           {% end %}
         end
       {% end %}
@@ -189,9 +183,20 @@ module Crumble
       end
 
       {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+        %field{var} = @{{var}}
+
         {% unless var.annotation(Nilable) %}
-          if (%field{var} = @{{var}}).nil?
+          if %field{var}.nil?
             errors << {{var.stringify}}
+          end
+        {% end %}
+
+        {% ann = var.annotation(Field) %}
+        {% if ann.named_args.has_key?(:allow_blank) && ann.named_args[:allow_blank] == false %}
+          if %field{var}.is_a?(String)
+            if %field{var}.empty?
+              errors << {{var.stringify}}
+            end
           end
         {% end %}
       {% end %}
