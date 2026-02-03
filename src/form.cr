@@ -167,7 +167,11 @@ module Crumble
           {% ann = ivar.annotation(Field) %}
           {% label_value = ann.named_args[:label] %}
           {% if label_value == :__crumble_default__ %}
-            return default_label_caption(:{{ivar.name}})
+            {% if ann[:type] == :hidden %}
+              return nil
+            {% else %}
+              return default_label_caption(:{{ivar.name}})
+            {% end %}
           {% else %}
             return {{label_value}}
           {% end %}

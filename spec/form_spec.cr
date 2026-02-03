@@ -80,7 +80,6 @@ class Crumble::FormSpec
     it "should return the correct HTML" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--default-form--a-field-id">A</label>
       <input id="crumble--form-spec--default-form--a-field-id" type="hidden" name="a" value="Blah">
       <label for="crumble--form-spec--default-form--b-field-id">B</label>
       <input id="crumble--form-spec--default-form--b-field-id" type="text" name="b" value="">
