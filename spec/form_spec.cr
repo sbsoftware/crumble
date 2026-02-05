@@ -76,6 +76,19 @@ class Crumble::FormSpec
     ]
   end
 
+  class HtmlAttrsForm < Crumble::Form
+    field amount : String, attrs: {required: true, step: ".01", placeholder: "Amount"}
+  end
+
+  class MixedAttrsForm < Crumble::Form
+    field amount : String, attrs: [
+      Crumble::FormSpec::ControllerAttr,
+      {required: true, step: ".01"},
+      Crumble::FormSpec::TargetAttr,
+      {placeholder: "Amount"},
+    ]
+  end
+
   describe "DefaultForm#to_html" do
     it "should return the correct HTML" do
       ctx = test_handler_context
@@ -162,6 +175,30 @@ class Crumble::FormSpec
       HTML
 
       AttrForm.new(ctx, name: "Bob").to_html.should eq(expected)
+    end
+  end
+
+  describe "HtmlAttrsForm#to_html" do
+    it "includes HTML attributes defined via attrs hash" do
+      ctx = test_handler_context
+      expected = <<-HTML.squish
+      <label for="crumble--form-spec--html-attrs-form--amount-field-id">Amount</label>
+      <input id="crumble--form-spec--html-attrs-form--amount-field-id" step=".01" placeholder="Amount" type="text" name="amount" value="12.34" required>
+      HTML
+
+      HtmlAttrsForm.new(ctx, amount: "12.34").to_html.should eq(expected)
+    end
+  end
+
+  describe "MixedAttrsForm#to_html" do
+    it "accepts a mix of attribute providers and HTML attributes" do
+      ctx = test_handler_context
+      expected = <<-HTML.squish
+      <label for="crumble--form-spec--mixed-attrs-form--amount-field-id">Amount</label>
+      <input id="crumble--form-spec--mixed-attrs-form--amount-field-id" data-controller="signup" step=".01" data-controller-target="name" placeholder="Amount" type="text" name="amount" value="12.34" required>
+      HTML
+
+      MixedAttrsForm.new(ctx, amount: "12.34").to_html.should eq(expected)
     end
   end
 

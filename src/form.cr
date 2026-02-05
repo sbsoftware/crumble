@@ -59,7 +59,17 @@ module Crumble
         {% field_attr_nodes = [] of ASTNode %}
       {% elsif attrs.is_a?(ArrayLiteral) || attrs.is_a?(TupleLiteral) %}
         {% for attr in attrs %}
-          {% field_attr_nodes << attr %}
+          {% if attr.is_a?(NamedTupleLiteral) %}
+            {% for key, value in attr %}
+              {% field_attr_nodes << {key.id.stringify, value} %}
+            {% end %}
+          {% else %}
+            {% field_attr_nodes << attr %}
+          {% end %}
+        {% end %}
+      {% elsif attrs.is_a?(NamedTupleLiteral) %}
+        {% for key, value in attrs %}
+          {% field_attr_nodes << {key.id.stringify, value} %}
         {% end %}
       {% else %}
         {% field_attr_nodes << attrs %}
@@ -143,7 +153,7 @@ module Crumble
         type: {{(type || :text).id.symbolize}},
         allow_blank: {{allow_blank}},
         label: {{label}},
-        attrs: {% if field_attr_nodes.empty? %}[] of Nil{% else %}{{field_attr_nodes}}{% end %},
+        attrs: {% if field_attr_nodes.empty? %}[] of Nil{% else %}[{{field_attr_nodes.splat}}]{% end %},
       )]
       {% if field_type.resolve.nilable? %}
         @[Nilable]

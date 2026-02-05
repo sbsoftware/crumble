@@ -217,6 +217,7 @@ end
 class ProfileForm < Crumble::Form
   field name : String, attrs: [ProfileNameController, ProfileNameTarget]
   field bio : String?, label: nil
+  field price : String, attrs: {required: true, step: ".01", placeholder: "0.00"}
   field slug : String do
     before_render do |value|
       value.upcase
@@ -234,7 +235,7 @@ form.values # => {name: "...", bio: nil, slug: "..."}
 ```
 
 - Each `field` supports `type:`, `label:`, and `attrs:` options for rendering.
-- `attrs:` accepts one or more attribute providers (implementing `to_html_attrs`) to add HTML attributes.
+- `attrs:` accepts attribute providers (implementing `to_html_attrs`), a named tuple of HTML attributes, or a mix of both.
 - Override `default_label_caption(field)` in your form to customize default label text.
 - `before_render` transforms a field value right before rendering its `<input>`.
 - `after_submit` transforms a field value whenever it is assigned (including `from_www_form`).
