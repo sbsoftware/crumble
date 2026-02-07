@@ -7,7 +7,6 @@ macro add_macro_before
 end
 
 module Crumble::Page::BeforeSpec
-
   class Parent < Crumble::Page
     before do
       ctx.request.headers["X-OK"]? == "1"

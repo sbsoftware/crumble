@@ -41,12 +41,13 @@ module Crumble
       {% end %}
     end
 
-    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, allow_blank = true, &block)
+    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, allow_blank = true, options = nil, &block)
       {% before_render_block = nil %}
       {% after_submit_block = nil %}
       {% field_name = nil %}
       {% field_type = nil %}
       {% field_attr_nodes = [] of ASTNode %}
+      {% field_control_type = (type || :text).id.symbolize %}
 
       {% unless type_decl.is_a?(TypeDeclaration) %}
         {% type_decl.raise "Field must use a type declaration, e.g. field name : String" %}
@@ -54,6 +55,16 @@ module Crumble
 
       {% field_name = type_decl.var %}
       {% field_type = type_decl.type %}
+
+      {% if field_control_type == :select %}
+        {% if options.is_a?(NilLiteral) %}
+          {% type_decl.raise "select field #{field_name} must define options: (e.g. options: {\"a\" => \"A\"} or options: [{\"a\", \"A\"}])" %}
+        {% end %}
+      {% else %}
+        {% unless options.is_a?(NilLiteral) %}
+          {% options.raise "options: is only supported for select fields (type: :select)" %}
+        {% end %}
+      {% end %}
 
       {% if attrs.is_a?(NilLiteral) %}
         {% field_attr_nodes = [] of ASTNode %}
@@ -150,10 +161,11 @@ module Crumble
       end
 
       @[Field(
-        type: {{(type || :text).id.symbolize}},
+        type: {{field_control_type}},
         allow_blank: {{allow_blank}},
         label: {{label}},
         attrs: {% if field_attr_nodes.empty? %}[] of Nil{% else %}[{{field_attr_nodes.splat}}]{% end %},
+        options: {{options}},
       )]
       {% if field_type.resolve.nilable? %}
         @[Nilable]
@@ -252,10 +264,33 @@ module Crumble
 
         {% ann = ivar.annotation(Field) %}
         {% attrs = ann.named_args[:attrs] %}
-        input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
-          type: {{ann[:type]}},
-          name: {{ivar.name.stringify}},
-          value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+        {% control_type = ann[:type] %}
+        {% if control_type == :select %}
+          {% options = ann.named_args[:options] %}
+          select_tag {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+            name: {{ivar.name.stringify}} do
+            %selected_value = __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+
+            {{options}}.to_h.each do |%pair|
+              %option_value = %pair.first
+              %option_label = %pair.last
+
+              option value: %option_value.to_s, selected: (%selected_value == %option_value.to_s) do
+                %option_label.to_s
+              end
+            end
+          end
+        {% elsif control_type == :textarea %}
+          textarea {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+            name: {{ivar.name.stringify}} do
+            __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+          end
+        {% else %}
+          input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+            type: {{control_type}},
+            name: {{ivar.name.stringify}},
+            value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+        {% end %}
       {% end %}
     end
   end

@@ -89,6 +89,15 @@ class Crumble::FormSpec
     ]
   end
 
+  class NonInputControlsForm < Crumble::Form
+    field role : String?, type: :select, options: {
+      "user"  => "User",
+      "admin" => "Admin",
+    }
+
+    field bio : String?, type: :textarea
+  end
+
   describe "DefaultForm#to_html" do
     it "should return the correct HTML" do
       ctx = test_handler_context
@@ -199,6 +208,20 @@ class Crumble::FormSpec
       HTML
 
       MixedAttrsForm.new(ctx, amount: "12.34").to_html.should eq(expected)
+    end
+  end
+
+  describe "NonInputControlsForm#to_html" do
+    it "renders select and textarea fields in the native template" do
+      ctx = test_handler_context
+      expected = <<-HTML.squish
+      <label for="crumble--form-spec--non-input-controls-form--role-field-id">Role</label>
+      <select id="crumble--form-spec--non-input-controls-form--role-field-id" name="role"><option value="user">User</option><option value="admin" selected>Admin</option></select>
+      <label for="crumble--form-spec--non-input-controls-form--bio-field-id">Bio</label>
+      <textarea id="crumble--form-spec--non-input-controls-form--bio-field-id" name="bio">Hello</textarea>
+      HTML
+
+      NonInputControlsForm.new(ctx, role: "admin", bio: "Hello").to_html.should eq(expected)
     end
   end
 
