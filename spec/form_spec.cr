@@ -1,6 +1,19 @@
 require "./spec_helper"
 
 class Crumble::FormSpec
+  class FieldWrapperStyle < CSS::Stylesheet
+    rule Crumble::Field do
+      font_size 12.px
+    end
+  end
+
+  describe "FieldWrapperStyle" do
+    it "can reference Crumble::Field from styles outside the form" do
+      asset_file = AssetFileRegistry.query(FieldWrapperStyle.uri_path).not_nil!
+      asset_file.contents.should eq(".crumble--field {\n  font-size: 12px;\n}")
+    end
+  end
+
   class DefaultForm < Crumble::Form
     field a : String, type: :hidden
     field b : String?, type: :text
@@ -103,8 +116,10 @@ class Crumble::FormSpec
       ctx = test_handler_context
       expected = <<-HTML.squish
       <input id="crumble--form-spec--default-form--a-field-id" type="hidden" name="a" value="Blah">
-      <label for="crumble--form-spec--default-form--b-field-id">B</label>
-      <input id="crumble--form-spec--default-form--b-field-id" type="text" name="b" value="">
+      <div class="crumble--field">
+        <label for="crumble--form-spec--default-form--b-field-id">B</label>
+        <input id="crumble--form-spec--default-form--b-field-id" type="text" name="b" value="">
+      </div>
       HTML
 
       DefaultForm.new(ctx, a: "Blah", b: nil).to_html.should eq(expected)
@@ -115,11 +130,14 @@ class Crumble::FormSpec
     it "should support custom and nil labels" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--labeled-form--a-field-id">Custom A</label>
       <input id="crumble--form-spec--labeled-form--a-field-id" type="hidden" name="a" value="Blah">
-      <input id="crumble--form-spec--labeled-form--b-field-id" type="text" name="b" value="">
-      <label for="crumble--form-spec--labeled-form--c-field-id">C</label>
-      <input id="crumble--form-spec--labeled-form--c-field-id" type="text" name="c" value="foo">
+      <div class="crumble--field">
+        <input id="crumble--form-spec--labeled-form--b-field-id" type="text" name="b" value="">
+      </div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--labeled-form--c-field-id">C</label>
+        <input id="crumble--form-spec--labeled-form--c-field-id" type="text" name="c" value="foo">
+      </div>
       HTML
 
       LabeledForm.new(ctx, a: "Blah", b: nil, c: "foo").to_html.should eq(expected)
@@ -130,10 +148,14 @@ class Crumble::FormSpec
     it "should allow overriding default label behavior" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--custom-default-label-form--a-field-id">I18n.a</label>
-      <input id="crumble--form-spec--custom-default-label-form--a-field-id" type="text" name="a" value="x">
-      <label for="crumble--form-spec--custom-default-label-form--b-field-id">I18n.b</label>
-      <input id="crumble--form-spec--custom-default-label-form--b-field-id" type="text" name="b" value="y">
+      <div class="crumble--field">
+        <label for="crumble--form-spec--custom-default-label-form--a-field-id">I18n.a</label>
+        <input id="crumble--form-spec--custom-default-label-form--a-field-id" type="text" name="a" value="x">
+      </div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--custom-default-label-form--b-field-id">I18n.b</label>
+        <input id="crumble--form-spec--custom-default-label-form--b-field-id" type="text" name="b" value="y">
+      </div>
       HTML
 
       CustomDefaultLabelForm.new(ctx, a: "x", b: "y").to_html.should eq(expected)
@@ -158,10 +180,14 @@ class Crumble::FormSpec
       ctx = test_handler_context
       form = TransformForm.new(ctx, name: "  Bob ", code: "  xy ")
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--transform-form--name-field-id">Name</label>
-      <input id="crumble--form-spec--transform-form--name-field-id" type="text" name="name" value="BOB">
-      <label for="crumble--form-spec--transform-form--code-field-id">Code</label>
-      <input id="crumble--form-spec--transform-form--code-field-id" type="text" name="code" value="XY">
+      <div class="crumble--field">
+        <label for="crumble--form-spec--transform-form--name-field-id">Name</label>
+        <input id="crumble--form-spec--transform-form--name-field-id" type="text" name="name" value="BOB">
+      </div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--transform-form--code-field-id">Code</label>
+        <input id="crumble--form-spec--transform-form--code-field-id" type="text" name="code" value="XY">
+      </div>
       HTML
 
       form.to_html.should eq(expected)
@@ -179,8 +205,10 @@ class Crumble::FormSpec
     it "includes additional field attribute objects on the input element" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--attr-form--name-field-id">Name</label>
-      <input id="crumble--form-spec--attr-form--name-field-id" data-controller="signup" data-controller-target="name" type="text" name="name" value="Bob">
+      <div class="crumble--field">
+        <label for="crumble--form-spec--attr-form--name-field-id">Name</label>
+        <input id="crumble--form-spec--attr-form--name-field-id" data-controller="signup" data-controller-target="name" type="text" name="name" value="Bob">
+      </div>
       HTML
 
       AttrForm.new(ctx, name: "Bob").to_html.should eq(expected)
@@ -191,8 +219,10 @@ class Crumble::FormSpec
     it "includes HTML attributes defined via attrs hash" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--html-attrs-form--amount-field-id">Amount</label>
-      <input id="crumble--form-spec--html-attrs-form--amount-field-id" step=".01" placeholder="Amount" type="text" name="amount" value="12.34" required>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--html-attrs-form--amount-field-id">Amount</label>
+        <input id="crumble--form-spec--html-attrs-form--amount-field-id" step=".01" placeholder="Amount" type="text" name="amount" value="12.34" required>
+      </div>
       HTML
 
       HtmlAttrsForm.new(ctx, amount: "12.34").to_html.should eq(expected)
@@ -203,8 +233,10 @@ class Crumble::FormSpec
     it "accepts a mix of attribute providers and HTML attributes" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--mixed-attrs-form--amount-field-id">Amount</label>
-      <input id="crumble--form-spec--mixed-attrs-form--amount-field-id" data-controller="signup" step=".01" data-controller-target="name" placeholder="Amount" type="text" name="amount" value="12.34" required>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--mixed-attrs-form--amount-field-id">Amount</label>
+        <input id="crumble--form-spec--mixed-attrs-form--amount-field-id" data-controller="signup" step=".01" data-controller-target="name" placeholder="Amount" type="text" name="amount" value="12.34" required>
+      </div>
       HTML
 
       MixedAttrsForm.new(ctx, amount: "12.34").to_html.should eq(expected)
@@ -215,10 +247,14 @@ class Crumble::FormSpec
     it "renders select and textarea fields in the native template" do
       ctx = test_handler_context
       expected = <<-HTML.squish
-      <label for="crumble--form-spec--non-input-controls-form--role-field-id">Role</label>
-      <select id="crumble--form-spec--non-input-controls-form--role-field-id" name="role"><option value="user">User</option><option value="admin" selected>Admin</option></select>
-      <label for="crumble--form-spec--non-input-controls-form--bio-field-id">Bio</label>
-      <textarea id="crumble--form-spec--non-input-controls-form--bio-field-id" name="bio">Hello</textarea>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--non-input-controls-form--role-field-id">Role</label>
+        <select id="crumble--form-spec--non-input-controls-form--role-field-id" name="role"><option value="user">User</option><option value="admin" selected>Admin</option></select>
+      </div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--non-input-controls-form--bio-field-id">Bio</label>
+        <textarea id="crumble--form-spec--non-input-controls-form--bio-field-id" name="bio">Hello</textarea>
+      </div>
       HTML
 
       NonInputControlsForm.new(ctx, role: "admin", bio: "Hello").to_html.should eq(expected)

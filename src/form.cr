@@ -2,6 +2,10 @@ require "uri"
 require "uri/params/from_www_form"
 
 module Crumble
+  # Generic class for form field wrappers. Defined as a css_class so it can be
+  # referenced from CSS builder code (e.g. `rule Crumble::Field do ... end`).
+  css_class Field
+
   abstract class Form
     annotation Field; end
     annotation Nilable; end
@@ -187,13 +191,13 @@ module Crumble
       {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
         if field == :{{ivar.name}}
           {% ann = ivar.annotation(Field) %}
+          {% if ann[:type] == :hidden %}
+            return nil
+          {% end %}
+
           {% label_value = ann.named_args[:label] %}
           {% if label_value == :__crumble_default__ %}
-            {% if ann[:type] == :hidden %}
-              return nil
-            {% else %}
-              return default_label_caption(:{{ivar.name}})
-            {% end %}
+            return default_label_caption(:{{ivar.name}})
           {% else %}
             return {{label_value}}
           {% end %}
@@ -256,40 +260,49 @@ module Crumble
 
     ToHtml.instance_template do
       {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-        if %label_caption = label_caption_for(:{{ivar.name}})
-          label {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId do
-            %label_caption
-          end
-        end
-
         {% ann = ivar.annotation(Field) %}
         {% attrs = ann.named_args[:attrs] %}
         {% control_type = ann[:type] %}
-        {% if control_type == :select %}
-          {% options = ann.named_args[:options] %}
-          select_tag {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
-            name: {{ivar.name.stringify}} do
-            %selected_value = __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
-
-            {{options}}.to_h.each do |%pair|
-              %option_value = %pair.first
-              %option_label = %pair.last
-
-              option value: %option_value.to_s, selected: (%selected_value == %option_value.to_s) do
-                %option_label.to_s
-              end
-            end
-          end
-        {% elsif control_type == :textarea %}
-          textarea {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
-            name: {{ivar.name.stringify}} do
-            __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
-          end
-        {% else %}
+        {% if control_type == :hidden %}
           input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
             type: {{control_type}},
             name: {{ivar.name.stringify}},
             value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+        {% else %}
+          div Crumble::Field do
+            if %label_caption = label_caption_for(:{{ivar.name}})
+              label {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId do
+                %label_caption
+              end
+            end
+
+            {% if control_type == :select %}
+              {% options = ann.named_args[:options] %}
+              select_tag {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+                name: {{ivar.name.stringify}} do
+                %selected_value = __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+
+                {{options}}.to_h.each do |%pair|
+                  %option_value = %pair.first
+                  %option_label = %pair.last
+
+                  option value: %option_value.to_s, selected: (%selected_value == %option_value.to_s) do
+                    %option_label.to_s
+                  end
+                end
+              end
+            {% elsif control_type == :textarea %}
+              textarea {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+                name: {{ivar.name.stringify}} do
+                __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+              end
+            {% else %}
+              input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
+                type: {{control_type}},
+                name: {{ivar.name.stringify}},
+                value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
+            {% end %}
+          end
         {% end %}
       {% end %}
     end
