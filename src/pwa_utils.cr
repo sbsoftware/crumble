@@ -3,12 +3,18 @@ require "to_html"
 require "./web_manifest"
 
 module Crumble
+  module ServiceWorkers
+  end
+
+  module ServiceWorkerRegistrations
+  end
+
   macro finished
-    {% registration_classes = @type.constants.select(&.stringify.starts_with?("ScopedServiceWorkerRegistration")).sort_by(&.stringify) %}
+    {% registration_classes = JS::Code.subclasses.select(&.stringify.starts_with?("Crumble::ServiceWorkerRegistrations::")).sort_by(&.stringify) %}
     {% unless registration_classes.empty? %}
       class ::ToHtml::Layout
         {% for registration_class in registration_classes %}
-          append_to_head ::Crumble::{{registration_class.id}}
+          append_to_head ::{{registration_class}}
         {% end %}
       end
     {% end %}
@@ -42,7 +48,7 @@ macro service_worker(scope = "/", &blk)
   {% worker_class_name = "ScopedServiceWorker#{scope_key.id.camelcase}".id %}
   {% registration_class_name = "ScopedServiceWorkerRegistration#{scope_key.id.camelcase}".id %}
 
-  class ::Crumble::{{worker_class_name}} < JS::File
+  class ::Crumble::ServiceWorkers::{{worker_class_name}} < JS::File
     @@file : JavascriptFile? = nil
 
     def self.scope
@@ -60,12 +66,12 @@ macro service_worker(scope = "/", &blk)
     {% end %}
   end
 
-  class ::Crumble::{{registration_class_name}} < JS::Code
+  class ::Crumble::ServiceWorkerRegistrations::{{registration_class_name}} < JS::Code
     def_to_js do
       if navigator.serviceWorker
         navigator.serviceWorker.register(
-          ::Crumble::{{worker_class_name}}.uri_path.to_js_ref,
-          scope: ::Crumble::{{worker_class_name}}.scope.to_js_ref,
+          ::Crumble::ServiceWorkers::{{worker_class_name}}.uri_path.to_js_ref,
+          scope: ::Crumble::ServiceWorkers::{{worker_class_name}}.scope.to_js_ref,
         )
       end
     end

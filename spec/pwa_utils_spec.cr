@@ -52,17 +52,17 @@ end
 
 describe "service_worker macro" do
   it "composes same-scope fragments in declaration order" do
-    Crumble::ScopedServiceWorkerRoot.uri_path.should eq("/service_worker.js")
+    Crumble::ServiceWorkers::ScopedServiceWorkerRoot.uri_path.should eq("/service_worker.js")
 
-    script = Crumble::ScopedServiceWorkerRoot.to_js
+    script = Crumble::ServiceWorkers::ScopedServiceWorkerRoot.to_js
     script.index("root-first").not_nil!.should be < script.index("root-second").not_nil!
     script.index("root-second").not_nil!.should be < script.index("root-third-via-alias").not_nil!
   end
 
   it "creates separate workers for different scopes" do
-    Crumble::ScopedServiceWorkerRoot.uri_path.should eq("/service_worker.js")
-    Crumble::ScopedServiceWorkerAdmin.uri_path.should eq("/service_worker__admin.js")
-    Crumble::ScopedServiceWorkerAdmin.to_js.should contain("admin-only")
+    Crumble::ServiceWorkers::ScopedServiceWorkerRoot.uri_path.should eq("/service_worker.js")
+    Crumble::ServiceWorkers::ScopedServiceWorkerAdmin.uri_path.should eq("/service_worker__admin.js")
+    Crumble::ServiceWorkers::ScopedServiceWorkerAdmin.to_js.should contain("admin-only")
   end
 
   it "emits one registration call per scope" do
@@ -77,14 +77,14 @@ describe "service_worker macro" do
   end
 
   it "serves service worker assets with non-immutable cache headers and keeps etag revalidation" do
-    response = dispatch_worker_request(Crumble::ScopedServiceWorkerRoot.uri_path)
+    response = dispatch_worker_request(Crumble::ServiceWorkers::ScopedServiceWorkerRoot.uri_path)
     response.status_code.should eq(200)
     response.headers["Cache-Control"].should eq("public, max-age=0, must-revalidate")
     response.headers["ETag"].should_not be_empty
     response.body.should contain("root-first")
 
     headers = HTTP::Headers{"If-None-Match" => response.headers["ETag"]}
-    not_modified = dispatch_worker_request(Crumble::ScopedServiceWorkerRoot.uri_path, headers)
+    not_modified = dispatch_worker_request(Crumble::ServiceWorkers::ScopedServiceWorkerRoot.uri_path, headers)
     not_modified.status_code.should eq(304)
     not_modified.body.should eq("")
   end
