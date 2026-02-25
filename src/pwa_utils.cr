@@ -2,42 +2,21 @@ require "js"
 require "to_html"
 require "./web_manifest"
 
-class ToHtml::Layout
-  macro append_to_head_once(obj)
-    {% marker = "__append_to_head_once_#{obj.stringify.gsub(/[^A-Za-z0-9]/, "_").id}".id %}
-    {% unless @type.methods.map(&.name.stringify).includes?(marker.stringify) %}
-      def {{marker}}
+module Crumble
+  macro finished
+    {% registration_classes = @type.constants.select(&.stringify.starts_with?("ScopedServiceWorkerRegistration")).sort_by(&.stringify) %}
+    {% unless registration_classes.empty? %}
+      class ::ToHtml::Layout
+        {% for registration_class in registration_classes %}
+          append_to_head ::Crumble::{{registration_class.id}}
+        {% end %}
       end
-      append_to_head {{obj}}
     {% end %}
   end
 end
 
-module Crumble
-  abstract class ScopedServiceWorker < JS::Code
-    macro append_fragment(&blk)
-      def self.to_js(io : IO)
-        {% if @type.class.methods.map(&.name).includes?("to_js".id) %}
-          previous_def(io)
-        {% end %}
-        JS::Code._eval_js_block(
-          io,
-          {{@type.resolve}},
-          {inline: false, nested_scope: true, strict: false, declared_vars: [] of String}
-        ) {{blk}}
-      end
-
-      def self.to_js
-        String.build do |str|
-          to_js(str)
-        end
-      end
-    end
-  end
-end
-
-# Generates or extends a scope-specific service worker and registers it within
-# `ToHtml::Layout`.
+# Generates or extends a scope-specific service worker and includes one
+# registration script per scope in `ToHtml::Layout`.
 #
 # Multiple calls for the same scope compose into one worker script. Fragments
 # are merged in declaration order, so later blocks can override behavior from
@@ -63,7 +42,7 @@ macro service_worker(scope = "/", &blk)
   {% worker_class_name = "ScopedServiceWorker#{scope_key.id.camelcase}".id %}
   {% registration_class_name = "ScopedServiceWorkerRegistration#{scope_key.id.camelcase}".id %}
 
-  class ::Crumble::{{worker_class_name}} < ::Crumble::ScopedServiceWorker
+  class ::Crumble::{{worker_class_name}} < JS::File
     @@file : JavascriptFile? = nil
 
     def self.scope
@@ -74,11 +53,11 @@ macro service_worker(scope = "/", &blk)
       (@@file ||= JavascriptFile.new({{worker_uri_path}}, to_js, immutable: false)).uri_path
     end
 
-    append_fragment do
-      {% if blk %}
+    {% if blk %}
+      js_fragment do
         {{blk.body}}
-      {% end %}
-    end
+      end
+    {% end %}
   end
 
   class ::Crumble::{{registration_class_name}} < JS::Code
@@ -90,10 +69,6 @@ macro service_worker(scope = "/", &blk)
         )
       end
     end
-  end
-
-  class ::ToHtml::Layout
-    append_to_head_once ::Crumble::{{registration_class_name}}
   end
 end
 
