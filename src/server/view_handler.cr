@@ -20,7 +20,15 @@ module Crumble::Server
       nil
     end
 
+    def meta_description : String?
+      nil
+    end
+
     def og_image : String?
+      nil
+    end
+
+    def og_image_alt : String?
       nil
     end
 
@@ -33,6 +41,26 @@ module Crumble::Server
     end
 
     def og_site_name : String?
+      nil
+    end
+
+    def twitter_card : String?
+      nil
+    end
+
+    def twitter_title : String?
+      nil
+    end
+
+    def twitter_description : String?
+      nil
+    end
+
+    def twitter_image : String?
+      nil
+    end
+
+    def twitter_image_alt : String?
       nil
     end
   end

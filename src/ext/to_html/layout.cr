@@ -19,6 +19,10 @@ module ToHtml
       template do
         handler = ctx.handler
 
+        if description = handler.meta_description
+          meta name: "description", content: description
+        end
+
         if title = handler.og_title
           meta property: "og:title", content: title
         end
@@ -31,6 +35,10 @@ module ToHtml
           meta property: "og:image", content: image
         end
 
+        if image_alt = handler.og_image_alt
+          meta property: "og:image:alt", content: image_alt
+        end
+
         if url = handler.og_url
           meta property: "og:url", content: url
         end
@@ -41,6 +49,26 @@ module ToHtml
 
         if site_name = handler.og_site_name
           meta property: "og:site_name", content: site_name
+        end
+
+        if card = handler.twitter_card
+          meta name: "twitter:card", content: card
+        end
+
+        if title = handler.twitter_title
+          meta name: "twitter:title", content: title
+        end
+
+        if description = handler.twitter_description
+          meta name: "twitter:description", content: description
+        end
+
+        if image = handler.twitter_image
+          meta name: "twitter:image", content: image
+        end
+
+        if image_alt = handler.twitter_image_alt
+          meta name: "twitter:image:alt", content: image_alt
         end
       end
     end
