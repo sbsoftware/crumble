@@ -38,6 +38,22 @@ module Crumble::PageSpec
     end
   end
 
+  class DirectTemplatePage < Crumble::Page
+    path_param id
+
+    template do
+      html do
+        body do
+          h1 { "ID: #{id} (#{window_title})" }
+        end
+      end
+    end
+
+    def window_title
+      "Direct Page"
+    end
+  end
+
   class PageLayout
     ToHtml.class_template do
       html do
@@ -159,6 +175,30 @@ module Crumble::PageSpec
       end
     end
   end
+
+  class TemplateThenViewPage < Crumble::Page
+    template do
+      p { "template first" }
+    end
+
+    view do
+      template do
+        p { "view second" }
+      end
+    end
+  end
+
+  class ViewThenTemplatePage < Crumble::Page
+    view do
+      template do
+        p { "view first" }
+      end
+    end
+
+    template do
+      p { "template second" }
+    end
+  end
 end
 
 describe Crumble::Page do
@@ -181,6 +221,20 @@ describe Crumble::Page do
     end
 
     res.should contain("Inline page for #{Crumble::PageSpec::BlockPage.uri_path}")
+  end
+
+  it "does not generate a nested View class for block-defined views" do
+    {{Crumble::PageSpec::BlockPage.constants.map(&.id.stringify).includes?("View")}}.should be_false
+  end
+
+  it "renders template blocks directly on the page with page access" do
+    res = String.build do |io|
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::DirectTemplatePage.uri_path(id: 42))
+      Crumble::PageSpec::DirectTemplatePage.handle(ctx).should eq(true)
+      ctx.response.flush
+    end
+
+    res.should contain("ID: 42 (Direct Page)")
   end
 
   it "applies the configured layout" do
@@ -262,5 +316,27 @@ describe Crumble::Page do
       ctx.response.flush
     end
     res.should contain("String ID: 11")
+  end
+
+  it "uses view block template when declared after template" do
+    res = String.build do |io|
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::TemplateThenViewPage.uri_path)
+      Crumble::PageSpec::TemplateThenViewPage.handle(ctx).should eq(true)
+      ctx.response.flush
+    end
+
+    res.should contain("view second")
+    res.should_not contain("template first")
+  end
+
+  it "uses template when declared after view block template" do
+    res = String.build do |io|
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::ViewThenTemplatePage.uri_path)
+      Crumble::PageSpec::ViewThenTemplatePage.handle(ctx).should eq(true)
+      ctx.response.flush
+    end
+
+    res.should contain("template second")
+    res.should_not contain("view first")
   end
 end

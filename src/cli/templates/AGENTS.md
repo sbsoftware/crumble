@@ -22,7 +22,7 @@ These notes are written for coding agents working in this repo.
 
 ## Crumble usage
 
-- **Pages**: subclass `Crumble::Page`. Routes are derived from class names (e.g. `ArticlesPage` → `/articles`). Use `view do ... end` and put markup in `template do ... end`.
+- **Pages**: subclass `Crumble::Page`. Routes are derived from class names (e.g. `ArticlesPage` → `/articles`). Use `template do ... end` directly in the page class.
 - **Resources**: subclass `Crumble::Resource` and implement `index/show/create/update/destroy` as needed. Use `render`, `redirect`, and `redirect_back`.
 - **Views/components**: prefer IO-based rendering (`#to_html(io : IO)`) and Crumble’s typed DSLs instead of assembling HTML strings.
 

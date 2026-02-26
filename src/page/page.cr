@@ -23,20 +23,21 @@ abstract class Crumble::Page
     end
   end
 
+  macro template(&blk)
+    def page_view
+      self
+    end
+
+    ToHtml.instance_template {{blk}}
+  end
+
   macro view(klass = nil, &blk)
     {% raise "Pass a view class or a block, not both" if klass && blk %}
     {% unless klass || blk %}{% raise "Provide a view class or block" %}{% end %}
 
     {% if blk %}
-      class View
-        include Crumble::ContextView
-
-        {{blk.body}}
-      end
-
-      def page_view
-        View.new(ctx: ctx)
-      end
+      {% warning "Crumble::Page view do ... end is deprecated; use template do ... end directly on the page." %}
+      {{blk.body}}
     {% else %}
       def page_view
         {% if klass.resolve < Crumble::ContextView %}
