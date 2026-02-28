@@ -47,7 +47,7 @@ module Crumble
         align_items :flex_end
         padding 0, 0.75.rem, 4.rem
         box_sizing :border_box
-        background "rgba(0, 0, 0, 0.3)"
+        background CSS::Stylesheet.rgb(0, 0, 0, alpha: 30.percent)
         z_index 2147483641
       end
 
@@ -59,7 +59,7 @@ module Crumble
         padding 0.8.rem
         background "#ffffff"
         color "#1f2937"
-        box_shadow 0.px, 0.5.rem, 1.5.rem, rgb(0, 0, 0, alpha: 20.percent)
+        box_shadow 0.px, 0.5.rem, 1.5.rem, CSS::Stylesheet.rgb(0, 0, 0, alpha: 20.percent)
       end
 
       rule InstallPanelText do
@@ -90,10 +90,10 @@ module Crumble
 
     class Script < JS::Code
       def_to_js do
-        root = document.querySelector(".crumble--pwa-install-component--install-container")
-        button = document.querySelector(".crumble--pwa-install-component--install-trigger")
-        panel = document.querySelector(".crumble--pwa-install-component--install-panel")
-        close_button = document.querySelector(".crumble--pwa-install-component--install-panel-close")
+        root = document.querySelector(InstallContainer.to_css_selector.to_s.to_js_ref)
+        button = document.querySelector(InstallTrigger.to_css_selector.to_s.to_js_ref)
+        panel = document.querySelector(InstallPanel.to_css_selector.to_s.to_js_ref)
+        close_button = document.querySelector(InstallPanelClose.to_css_selector.to_s.to_js_ref)
 
         if root && button && panel && close_button
           deferred_prompt = nil
@@ -107,7 +107,7 @@ module Crumble
           is_safari = user_agent.includes("Safari") && user_agent.includes("CriOS") == false && user_agent.includes("FxiOS") == false && user_agent.includes("EdgiOS") == false && user_agent.includes("OPiOS") == false && user_agent.includes("Chrome") == false && user_agent.includes("Android") == false
           is_ios_safari = is_ios && is_safari
           is_standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone == true
-          hidden_class = "crumble--pwa-install-component--hidden"
+          hidden_class = Hidden.to_s.to_js_ref
 
           close_panel = -> { panel.classList.add(hidden_class) }
           open_panel = -> { panel.classList.remove(hidden_class) }
@@ -170,13 +170,13 @@ module Crumble
     end
 
     template do
-      div [InstallContainer, Hidden] do
+      div InstallContainer, Hidden do
         button InstallTrigger, type: "button", aria: {haspopup: "dialog"} do
           "Install app"
         end
       end
 
-      div [InstallPanel, Hidden] do
+      div InstallPanel, Hidden do
         div InstallPanelDialog, role: "dialog", aria: {modal: true} do
           p InstallPanelText do
             "To install this app, tap Share, then Add to Home Screen."
