@@ -10,8 +10,9 @@ module Crumble
     css_class InstallPanelDialog
     css_class InstallPanelText
     css_class InstallPanelClose
+    css_class Hidden
 
-    class Style < CSS::Stylesheet
+    style Style do
       rule InstallContainer do
         position :fixed
         left 0
@@ -76,6 +77,10 @@ module Crumble
         font_size 0.85.rem
       end
 
+      rule Hidden do
+        display :none
+      end
+
       media(min_width 901.px) do
         rule InstallContainer, InstallPanel do
           display :none
@@ -102,16 +107,18 @@ module Crumble
           is_safari = user_agent.includes("Safari") && user_agent.includes("CriOS") == false && user_agent.includes("FxiOS") == false && user_agent.includes("EdgiOS") == false && user_agent.includes("OPiOS") == false && user_agent.includes("Chrome") == false && user_agent.includes("Android") == false
           is_ios_safari = is_ios && is_safari
           is_standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone == true
+          hidden_class = "crumble--pwa-install-component--hidden"
 
-          close_panel = -> { panel.hidden = true }
-          open_panel = -> { panel.hidden = false }
-          hide_install_ui = -> { root.hidden = true; close_panel._call }
+          close_panel = -> { panel.classList.add(hidden_class) }
+          open_panel = -> { panel.classList.remove(hidden_class) }
+          hide_install_ui = -> { root.classList.add(hidden_class); close_panel._call }
+          show_install_ui = -> { root.classList.remove(hidden_class) }
 
           if is_mobile == false || is_standalone
             hide_install_ui._call
           else
             if is_ios_safari
-              root.hidden = false
+              show_install_ui._call
             end
 
             # Capture browser install intent and defer native prompt to custom CTA click.
@@ -119,7 +126,7 @@ module Crumble
               event.preventDefault._call
               deferred_prompt = event
               if window.matchMedia("(display-mode: standalone)").matches == false && navigator.standalone != true
-                root.hidden = false
+                show_install_ui._call
               end
             end)
 
@@ -163,15 +170,13 @@ module Crumble
     end
 
     template do
-      Style
-
-      div InstallContainer, hidden: true do
+      div [InstallContainer, Hidden] do
         button InstallTrigger, type: "button", aria: {haspopup: "dialog"} do
           "Install app"
         end
       end
 
-      div InstallPanel, hidden: true do
+      div [InstallPanel, Hidden] do
         div InstallPanelDialog, role: "dialog", aria: {modal: true} do
           p InstallPanelText do
             "To install this app, tap Share, then Add to Home Screen."

@@ -20,15 +20,17 @@ describe Crumble::PwaInstallComponent do
     style_asset = AssetFileRegistry.query(Crumble::PwaInstallComponent::Style.uri_path).not_nil!
 
     html.should contain(%(<link rel="stylesheet" href="#{Crumble::PwaInstallComponent::Style.uri_path}">))
-    html.should contain(%(<div class="#{Crumble::PwaInstallComponent::InstallContainer}" hidden>))
+    html.should contain(%(<div class="#{Crumble::PwaInstallComponent::InstallContainer} #{Crumble::PwaInstallComponent::Hidden}">))
     html.should contain(%(<button class="#{Crumble::PwaInstallComponent::InstallTrigger}" type="button" aria-haspopup="dialog">Install app</button>))
-    html.should contain(%(<div class="#{Crumble::PwaInstallComponent::InstallPanel}" hidden>))
+    html.should contain(%(<div class="#{Crumble::PwaInstallComponent::InstallPanel} #{Crumble::PwaInstallComponent::Hidden}">))
     html.should contain(%(<button class="#{Crumble::PwaInstallComponent::InstallPanelClose}" type="button" aria-label="Close install instructions">Close</button>))
     html.should contain("To install this app, tap Share, then Add to Home Screen.")
     style_asset.contents.should contain(".#{Crumble::PwaInstallComponent::InstallContainer} {")
     style_asset.contents.should contain("background: #f6edac;")
     style_asset.contents.should contain(".#{Crumble::PwaInstallComponent::InstallTrigger} {")
     style_asset.contents.should contain("background: #757575;")
+    style_asset.contents.should contain(".#{Crumble::PwaInstallComponent::Hidden} {")
+    style_asset.contents.should contain("display: none;")
   end
 
   it "captures deferred beforeinstallprompt and handles install outcomes on custom click" do
@@ -43,6 +45,9 @@ describe Crumble::PwaInstallComponent do
     script.should contain("choice_result.outcome == \"accepted\"")
     script.should contain("choice_result.outcome == \"dismissed\"")
     script.should contain("deferred_prompt = undefined;")
+    script.should contain("hidden_class = \"crumble--pwa-install-component--hidden\";")
+    script.should contain("show_install_ui = () => {")
+    script.should contain("root.classList.remove(hidden_class);")
   end
 
   it "keeps the control mobile-only, hides when standalone, and shows iOS Safari fallback panel" do
@@ -54,6 +59,9 @@ describe Crumble::PwaInstallComponent do
     script.should contain("if (is_ios_safari) {")
     script.should contain("close_panel();")
     script.should contain("open_panel();")
+    script.should contain("panel.classList.add(hidden_class);")
+    script.should contain("panel.classList.remove(hidden_class);")
+    script.should contain("root.classList.add(hidden_class);")
     script.should contain("panel.addEventListener(\"click\", (event) => {")
     script.should contain("if (event.target == panel) {")
     script.should contain("window.addEventListener(\"appinstalled\", () => {")
