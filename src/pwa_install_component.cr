@@ -47,7 +47,7 @@ module Crumble
         align_items :flex_end
         padding 0, 0.75.rem, 4.rem
         box_sizing :border_box
-        background CSS::Stylesheet.rgb(0, 0, 0, alpha: 30.percent)
+        background rgb(0, 0, 0, alpha: 30.percent)
         z_index 2147483641
       end
 
@@ -59,7 +59,7 @@ module Crumble
         padding 0.8.rem
         background "#ffffff"
         color "#1f2937"
-        box_shadow 0.px, 0.5.rem, 1.5.rem, CSS::Stylesheet.rgb(0, 0, 0, alpha: 20.percent)
+        box_shadow 0.px, 0.5.rem, 1.5.rem, rgb(0, 0, 0, alpha: 20.percent)
       end
 
       rule InstallPanelText do
