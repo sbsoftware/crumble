@@ -4,195 +4,185 @@ require "to_html"
 module Crumble
   class PwaInstallComponent
     include Crumble::ContextView
+    css_class InstallContainer
+    css_class InstallTrigger
+    css_class InstallPanel
+    css_class InstallPanelDialog
+    css_class InstallPanelText
+    css_class InstallPanelClose
+
+    class Style < CSS::Stylesheet
+      rule InstallContainer do
+        position :fixed
+        left 0
+        right 0
+        bottom 0
+        width 100.vw
+        box_sizing :border_box
+        padding 0.5.rem, 0.75.rem
+        background "#f6edac"
+        display :flex
+        justify_content :center
+        align_items :center
+        z_index 2147483640
+      end
+
+      rule InstallTrigger do
+        appearance "none"
+        border 0
+        border_radius 999.px
+        padding 0.45.rem, 1.rem
+        background "#757575"
+        color "#ffffff"
+        font_size 0.9.rem
+        line_height 1
+      end
+
+      rule InstallPanel do
+        position :fixed
+        inset 0
+        display :flex
+        justify_content :center
+        align_items :flex_end
+        padding 0, 0.75.rem, 4.rem
+        box_sizing :border_box
+        background "rgba(0, 0, 0, 0.3)"
+        z_index 2147483641
+      end
+
+      rule InstallPanelDialog do
+        width 100.percent
+        max_width 30.rem
+        box_sizing :border_box
+        border_radius 0.75.rem
+        padding 0.8.rem
+        background "#ffffff"
+        color "#1f2937"
+        box_shadow 0.px, 0.5.rem, 1.5.rem, rgb(0, 0, 0, alpha: 20.percent)
+      end
+
+      rule InstallPanelText do
+        margin 0, 0, 0.6.rem
+        font_size 0.9.rem
+      end
+
+      rule InstallPanelClose do
+        appearance "none"
+        border 0
+        border_radius 0.5.rem
+        padding 0.4.rem, 0.75.rem
+        background "#757575"
+        color "#ffffff"
+        font_size 0.85.rem
+      end
+
+      media(min_width 901.px) do
+        rule InstallContainer, InstallPanel do
+          display :none
+        end
+      end
+    end
 
     class Script < JS::Code
       def_to_js do
-        _literal_js <<-JS
-        (() => {
-          const root = document.getElementById("crumble-pwa-install");
-          const button = document.getElementById("crumble-pwa-install-trigger");
-          const panel = document.getElementById("crumble-pwa-install-panel");
-          const closeButton = document.getElementById("crumble-pwa-install-panel-close");
-          if (!root || !button || !panel || !closeButton) return;
+        root = document.querySelector(".crumble--pwa-install-component--install-container")
+        button = document.querySelector(".crumble--pwa-install-component--install-trigger")
+        panel = document.querySelector(".crumble--pwa-install-component--install-panel")
+        close_button = document.querySelector(".crumble--pwa-install-component--install-panel-close")
 
-          let deferredPrompt = null;
-          const mobileMedia = window.matchMedia("(max-width: 900px)");
-          const isMobileAgent = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          const isMobile = mobileMedia.matches || isMobileAgent;
-          // iPadOS can report MacIntel, so we include the touch-point fallback.
-          const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-          const isSafari = /Safari/i.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome|Android/i.test(navigator.userAgent);
-          const isIosSafari = isIos && isSafari;
-          const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+        if root && button && panel && close_button
+          deferred_prompt = nil
+          user_agent = navigator.userAgent
+          mobile_media = window.matchMedia("(max-width: 900px)")
+          is_mobile_agent = user_agent.includes("Android") || user_agent.includes("iPhone") || user_agent.includes("iPad") || user_agent.includes("iPod") || user_agent.includes("IEMobile") || user_agent.includes("Opera Mini")
+          is_mobile = mobile_media.matches || is_mobile_agent
 
-          const closePanel = () => {
-            panel.hidden = true;
-          };
+          # iPadOS can report MacIntel, so we include a touch-point check.
+          is_ios = user_agent.includes("iPhone") || user_agent.includes("iPad") || user_agent.includes("iPod") || (navigator.platform == "MacIntel" && navigator.maxTouchPoints > 1)
+          is_safari = user_agent.includes("Safari") && user_agent.includes("CriOS") == false && user_agent.includes("FxiOS") == false && user_agent.includes("EdgiOS") == false && user_agent.includes("OPiOS") == false && user_agent.includes("Chrome") == false && user_agent.includes("Android") == false
+          is_ios_safari = is_ios && is_safari
+          is_standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone == true
 
-          const openPanel = () => {
-            panel.hidden = false;
-          };
+          close_panel = -> { panel.hidden = true }
+          open_panel = -> { panel.hidden = false }
+          hide_install_ui = -> { root.hidden = true; close_panel._call }
 
-          const hideInstallUi = () => {
-            root.hidden = true;
-            closePanel();
-          };
+          if is_mobile == false || is_standalone
+            hide_install_ui._call
+          else
+            if is_ios_safari
+              root.hidden = false
+            end
 
-          const showInstallUi = () => {
-            root.hidden = false;
-          };
+            # Capture browser install intent and defer native prompt to custom CTA click.
+            window.addEventListener("beforeinstallprompt", ->(event) do
+              event.preventDefault._call
+              deferred_prompt = event
+              if window.matchMedia("(display-mode: standalone)").matches == false && navigator.standalone != true
+                root.hidden = false
+              end
+            end)
 
-          if (!isMobile || isStandalone()) {
-            hideInstallUi();
-            return;
-          }
+            window.addEventListener("appinstalled", -> do
+              deferred_prompt = nil
+              hide_install_ui._call
+            end)
 
-          if (isIosSafari) showInstallUi();
+            close_button.addEventListener("click", -> do
+              close_panel._call
+            end)
 
-          // Capture the browser's install event and defer it until button click.
-          window.addEventListener("beforeinstallprompt", event => {
-            event.preventDefault();
-            deferredPrompt = event;
-            if (!isStandalone()) showInstallUi();
-          });
+            # Treat clicks on the backdrop (outside the panel card) as dismiss.
+            panel.addEventListener("click", ->(event) do
+              if event.target == panel
+                close_panel._call
+              end
+            end)
 
-          window.addEventListener("appinstalled", () => {
-            deferredPrompt = null;
-            hideInstallUi();
-          });
+            button.addEventListener("click", async do
+              is_standalone_now = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone == true
 
-          closeButton.addEventListener("click", () => {
-            closePanel();
-          });
+              if is_standalone_now
+                hide_install_ui._call
+              elsif is_ios_safari
+                close_panel._call
+                open_panel._call
+              elsif deferred_prompt
+                deferred_prompt.prompt._call
+                choice_result = await(deferred_prompt.userChoice)
+                deferred_prompt = nil
 
-          // Clicking the backdrop (outside the panel card) closes the fallback.
-          panel.addEventListener("click", event => {
-            if (event.target === panel) closePanel();
-          });
-
-          button.addEventListener("click", async () => {
-            if (isStandalone()) {
-              hideInstallUi();
-              return;
-            }
-
-            if (isIosSafari) {
-              closePanel();
-              openPanel();
-              return;
-            }
-
-            if (!deferredPrompt) return;
-
-            deferredPrompt.prompt();
-            const choiceResult = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            if (choiceResult && (choiceResult.outcome === "accepted" || choiceResult.outcome === "dismissed")) hideInstallUi();
-          });
-        })();
-        JS
+                if choice_result && (choice_result.outcome == "accepted" || choice_result.outcome == "dismissed")
+                  hide_install_ui._call
+                end
+              end
+            end)
+          end
+        end
       end
     end
 
     template do
-      div id: "crumble-pwa-install", hidden: true do
-        button id: "crumble-pwa-install-trigger", type: "button", aria: {haspopup: "dialog", controls: "crumble-pwa-install-panel"} do
+      Style
+
+      div InstallContainer, hidden: true do
+        button InstallTrigger, type: "button", aria: {haspopup: "dialog"} do
           "Install app"
         end
       end
 
-      div id: "crumble-pwa-install-panel", hidden: true do
-        div id: "crumble-pwa-install-panel-dialog", role: "dialog", aria: {modal: true} do
-          p { "To install this app, tap Share, then Add to Home Screen." }
-          button id: "crumble-pwa-install-panel-close", type: "button", aria: {label: "Close install instructions"} do
+      div InstallPanel, hidden: true do
+        div InstallPanelDialog, role: "dialog", aria: {modal: true} do
+          p InstallPanelText do
+            "To install this app, tap Share, then Add to Home Screen."
+          end
+          button InstallPanelClose, type: "button", aria: {label: "Close install instructions"} do
             "Close"
           end
         end
       end
 
-      script { Script.to_js }
-
-      style do
-        <<-CSS
-        #crumble-pwa-install {
-          position: fixed;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100vw;
-          box-sizing: border-box;
-          padding: 0.5rem 0.75rem;
-          background: #f6edac;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 2147483640;
-        }
-
-        #crumble-pwa-install[hidden] {
-          display: none;
-        }
-
-        #crumble-pwa-install-trigger {
-          appearance: none;
-          border: 0;
-          border-radius: 999px;
-          padding: 0.45rem 1rem;
-          background: #757575;
-          color: #ffffff;
-          font-size: 0.9rem;
-          line-height: 1;
-        }
-
-        #crumble-pwa-install-panel {
-          position: fixed;
-          inset: 0;
-          display: flex;
-          justify-content: center;
-          align-items: flex-end;
-          padding: 0 0.75rem 4rem;
-          box-sizing: border-box;
-          background: rgba(0, 0, 0, 0.3);
-          z-index: 2147483641;
-        }
-
-        #crumble-pwa-install-panel[hidden] {
-          display: none;
-        }
-
-        #crumble-pwa-install-panel-dialog {
-          width: min(30rem, 100%);
-          box-sizing: border-box;
-          border-radius: 0.75rem;
-          padding: 0.8rem;
-          background: #ffffff;
-          color: #1f2937;
-          box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
-        }
-
-        #crumble-pwa-install-panel-dialog p {
-          margin: 0 0 0.6rem;
-          font-size: 0.9rem;
-        }
-
-        #crumble-pwa-install-panel-close {
-          appearance: none;
-          border: 0;
-          border-radius: 0.5rem;
-          padding: 0.4rem 0.75rem;
-          background: #757575;
-          color: #ffffff;
-          font-size: 0.85rem;
-        }
-
-        @media (min-width: 901px) {
-          #crumble-pwa-install,
-          #crumble-pwa-install-panel {
-            display: none !important;
-          }
-        }
-        CSS
-      end
+      Script
     end
   end
 end
