@@ -321,14 +321,10 @@ module Crumble
           end
         {% end %}
 
-        if submitted?
-          __run_field_validations_{{var.id}}
-        end
+        __run_field_validations_{{var.id}}
       {% end %}
 
-      if submitted?
-        __run_form_validations
-      end
+      __run_form_validations
       @errors.not_nil!.none?
     end
 

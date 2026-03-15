@@ -310,12 +310,12 @@ class Crumble::FormSpec
   end
 
   describe "CustomValidationForm" do
-    it "runs custom validations only for submitted forms" do
+    it "runs custom validations on fresh forms but does not render errors" do
       ctx = test_handler_context
       form = CustomValidationForm.new(ctx, my_field: "x", some_field: "bar", other_field: "blah")
 
-      form.valid?.should be_true
-      form.errors.should eq([] of String)
+      form.valid?.should be_false
+      form.errors.should eq(["No match!", "Expected my_value", "Wrong", "Still wrong"])
       form.to_html.should_not contain("crumble--form-errors")
       form.to_html.should_not contain("crumble--field-errors")
     end
