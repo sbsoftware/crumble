@@ -33,6 +33,7 @@ module Crumble
         border 0
         border_radius 999.px
         padding 0.45.rem, 1.rem
+        margin 0, :auto
         background "#757575"
         color "#ffffff"
         font_size 0.9.rem
@@ -45,7 +46,7 @@ module Crumble
         display :flex
         justify_content :center
         align_items :flex_end
-        padding 0, 0.75.rem, 4.rem
+        padding 1.rem, 0.75.rem, 4.rem
         box_sizing :border_box
         background rgb(0, 0, 0, alpha: 30.percent)
         z_index 2147483641
@@ -72,6 +73,7 @@ module Crumble
         border 0
         border_radius 0.5.rem
         padding 0.4.rem, 0.75.rem
+        margin_left :auto
         background "#757575"
         color "#ffffff"
         font_size 0.85.rem
@@ -179,7 +181,7 @@ module Crumble
       div InstallPanel, Hidden do
         div InstallPanelDialog, role: "dialog", aria: {modal: true} do
           p InstallPanelText do
-            "To install this app, tap Share, then Add to Home Screen."
+            "To install this app, tap Share in the menu, then Add to Home Screen."
           end
           button InstallPanelClose, type: "button", aria: {label: "Close install instructions"} do
             "Close"
