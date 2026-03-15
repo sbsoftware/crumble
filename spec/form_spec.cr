@@ -283,6 +283,15 @@ class Crumble::FormSpec
   end
 
   describe "AllowBlankForm" do
+    it "checks built-in validity on fresh forms but does not render errors" do
+      ctx = test_handler_context
+      form = AllowBlankForm.new(ctx, name: "   ", optional: "", count: 1)
+
+      form.valid?.should be_false
+      form.errors.should eq(["name", "optional"])
+      form.to_html.should_not contain("crumble--field-errors")
+    end
+
     it "adds errors for empty strings after after_submit" do
       ctx = test_handler_context
       form = AllowBlankForm.from_www_form(ctx, URI::Params.encode({name: "   ", optional: "", count: "1"}))
@@ -306,7 +315,9 @@ class Crumble::FormSpec
       form = CustomValidationForm.new(ctx, my_field: "x", some_field: "bar", other_field: "blah")
 
       form.valid?.should be_true
-      form.errors.should be_nil
+      form.errors.should eq([] of String)
+      form.to_html.should_not contain("crumble--form-errors")
+      form.to_html.should_not contain("crumble--field-errors")
     end
 
     it "collects field and form errors in deterministic order on submit" do

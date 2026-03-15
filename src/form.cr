@@ -290,6 +290,7 @@ module Crumble
     end
 
     private def __error_messages_for(field : Symbol) : Array(String)
+      return [] of String unless submitted?
       return [] of String unless errors = @errors
       errors.compact_map do |error|
         error[1] if error[0] == field
@@ -297,7 +298,6 @@ module Crumble
     end
 
     def valid?
-      return true unless submitted?
       if existing_errors = @errors
         return existing_errors.none?
       end
@@ -321,10 +321,14 @@ module Crumble
           end
         {% end %}
 
-        __run_field_validations_{{var.id}}
+        if submitted?
+          __run_field_validations_{{var.id}}
+        end
       {% end %}
 
-      __run_form_validations
+      if submitted?
+        __run_form_validations
+      end
       @errors.not_nil!.none?
     end
 
