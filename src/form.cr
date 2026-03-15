@@ -5,6 +5,8 @@ module Crumble
   # Generic class for form field wrappers. Defined as a css_class so it can be
   # referenced from CSS builder code (e.g. `rule Crumble::Field do ... end`).
   css_class Field
+  css_class FormErrors
+  css_class FieldErrors
 
   abstract class Form
     annotation Field; end
@@ -353,7 +355,7 @@ module Crumble
     ToHtml.instance_template do
       if base_errors = __error_messages_for(:_base)
         if base_errors.size > 0
-          div class: "crumble--form-errors" do
+          div Crumble::FormErrors do
             ul do
               base_errors.each do |error|
                 li do
@@ -411,7 +413,7 @@ module Crumble
 
             if field_errors = __error_messages_for(:{{ivar.name.id}})
               if field_errors.size > 0
-                ul class: "crumble--field-errors" do
+                ul Crumble::FieldErrors do
                   field_errors.each do |error|
                     li do
                       error
