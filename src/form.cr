@@ -11,9 +11,15 @@ module Crumble
     annotation Nilable; end
 
     getter ctx : Crumble::Server::HandlerContext
-    getter errors : Array(String)?
+    @submitted : Bool
+    @validation_error_target : Symbol? = nil
+    @errors : Array(Tuple(Symbol, String))? = nil
 
-    def initialize(@ctx : Crumble::Server::HandlerContext, **values : **T) forall T
+    def initialize(ctx : Crumble::Server::HandlerContext, **values : **T) forall T
+      initialize(ctx, false, **values)
+    end
+
+    def initialize(@ctx : Crumble::Server::HandlerContext, @submitted : Bool, **values : **T) forall T
       {% for key in T.keys.map(&.id) %}
         {% if ivar = @type.instance_vars.find { |iv| iv.name == key } %}
           {% if ivar.annotation(Field) %}
@@ -27,6 +33,18 @@ module Crumble
       {% end %}
     end
 
+    def submitted? : Bool
+      @submitted
+    end
+
+    def errors : Array(String)?
+      @errors.try(&.map(&.[1]))
+    end
+
+    def error_entries : Array(Tuple(Symbol, String))?
+      @errors
+    end
+
     def self.from_www_form(ctx : Crumble::Server::HandlerContext, www_form : ::String) : self
       from_www_form(ctx, ::URI::Params.parse(www_form))
     end
@@ -37,7 +55,7 @@ module Crumble
           %field{ivar.name} = {{ivar.type}}.from_www_form(params, {{ivar.name.stringify}})
         {% end %}
 
-        new(ctx,
+        new(ctx, true,
           {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
             {{ivar.name.id}}: %field{ivar.name},
           {% end %}
@@ -45,9 +63,33 @@ module Crumble
       {% end %}
     end
 
+    macro validation(&block)
+      {% unless block %}
+        {% raise "validation must have a block" %}
+      {% end %}
+      {% if block.args.size > 0 %}
+        {% block.raise "validation must not accept block arguments" %}
+      {% end %}
+
+      private def __run_form_validations
+        {% if @type.has_method?("__run_form_validations") %}
+          {% if @type.methods.map(&.name.id.stringify).includes?("__run_form_validations") %}
+            previous_def
+          {% else %}
+            super
+          {% end %}
+        {% end %}
+
+        __with_validation_error_target(:_base) do
+          {{block.body}}
+        end
+      end
+    end
+
     macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, allow_blank = true, options = nil, &block)
       {% before_render_block = nil %}
       {% after_submit_block = nil %}
+      {% validation_blocks = [] of ASTNode %}
       {% field_name = nil %}
       {% field_type = nil %}
       {% field_attr_nodes = [] of ASTNode %}
@@ -122,8 +164,16 @@ module Crumble
               {% statement.raise "after_submit must accept exactly one argument" %}
             {% end %}
             {% after_submit_block = statement.block %}
+          {% elsif statement.is_a?(Call) && statement.name == "validation" %}
+            {% unless statement.block %}
+              {% statement.raise "validation must have a block" %}
+            {% end %}
+            {% if statement.block.args.size != 0 %}
+              {% statement.raise "validation must not accept block arguments" %}
+            {% end %}
+            {% validation_blocks << statement.block %}
           {% else %}
-            {% statement.raise "Only before_render and after_submit are allowed in a field block" %}
+            {% statement.raise "Only before_render, after_submit, and validation are allowed in a field block" %}
           {% end %}
         {% end %}
       {% end %}
@@ -161,6 +211,14 @@ module Crumble
           {% end %}
         {% else %}
           value
+        {% end %}
+      end
+
+      private def __run_field_validations_{{field_name.id}}
+        {% for validation_block in validation_blocks %}
+          __with_validation_error_target(:{{field_name.id}}) do
+            {{validation_block.body}}
+          end
         {% end %}
       end
 
@@ -205,19 +263,50 @@ module Crumble
       {% end %}
     end
 
-    def valid?
+    private def __run_form_validations
+    end
+
+    protected def add_error(message : String, field : Symbol? = nil) : Nil
+      __add_error(field || @validation_error_target || :_base, message)
+      nil
+    end
+
+    private def __with_validation_error_target(field : Symbol, &)
+      previous_field = @validation_error_target
+      @validation_error_target = field
+      yield
+    ensure
+      @validation_error_target = previous_field
+    end
+
+    private def __add_error(field : Symbol, message : String)
       if errors = @errors
-        return errors.none?
+        errors << {field, message}
       else
-        errors = @errors = [] of String
+        @errors = [{field, message}]
       end
+    end
+
+    private def __error_messages_for(field : Symbol) : Array(String)
+      return [] of String unless errors = @errors
+      errors.compact_map do |error|
+        error[1] if error[0] == field
+      end
+    end
+
+    def valid?
+      return true unless submitted?
+      if existing_errors = @errors
+        return existing_errors.none?
+      end
+      @errors = [] of Tuple(Symbol, String)
 
       {% for var in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
         %field{var} = @{{var}}
 
         {% unless var.annotation(Nilable) %}
           if %field{var}.nil?
-            errors << {{var.stringify}}
+            __add_error(:{{var.id}}, {{var.stringify}})
           end
         {% end %}
 
@@ -225,13 +314,16 @@ module Crumble
         {% if ann.named_args.has_key?(:allow_blank) && ann.named_args[:allow_blank] == false %}
           if %field{var}.is_a?(String)
             if %field{var}.empty?
-              errors << {{var.stringify}}
+              __add_error(:{{var.id}}, {{var.stringify}})
             end
           end
         {% end %}
+
+        __run_field_validations_{{var.id}}
       {% end %}
 
-      errors.none?
+      __run_form_validations
+      @errors.not_nil!.none?
     end
 
     def values
@@ -259,6 +351,20 @@ module Crumble
     end
 
     ToHtml.instance_template do
+      if base_errors = __error_messages_for(:_base)
+        if base_errors.size > 0
+          div class: "crumble--form-errors" do
+            ul do
+              base_errors.each do |error|
+                li do
+                  error
+                end
+              end
+            end
+          end
+        end
+      end
+
       {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
         {% ann = ivar.annotation(Field) %}
         {% attrs = ann.named_args[:attrs] %}
@@ -302,6 +408,18 @@ module Crumble
                 name: {{ivar.name.stringify}},
                 value: __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
             {% end %}
+
+            if field_errors = __error_messages_for(:{{ivar.name.id}})
+              if field_errors.size > 0
+                ul class: "crumble--field-errors" do
+                  field_errors.each do |error|
+                    li do
+                      error
+                    end
+                  end
+                end
+              end
+            end
           end
         {% end %}
       {% end %}
