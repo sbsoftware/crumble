@@ -24,10 +24,8 @@ module Crumble::Page::BeforeSpec
   end
 
   class AllowedPage < Parent
-    view do
-      template do
-        p { "Success!" }
-      end
+    template do
+      p { "Success!" }
     end
   end
 
@@ -38,10 +36,8 @@ module Crumble::Page::BeforeSpec
       true
     end
 
-    view do
-      template do
-        p { "Macro Success!" }
-      end
+    template do
+      p { "Macro Success!" }
     end
   end
 

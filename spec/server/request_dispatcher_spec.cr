@@ -11,11 +11,9 @@ module Crumble::Server::RequestDispatcherPageSpec
   class HomePage < Crumble::Page
     root_path "/root-handler-page"
 
-    view do
-      template do
-        html do
-          body { "page handled" }
-        end
+    template do
+      html do
+        body { "page handled" }
       end
     end
   end
