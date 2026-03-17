@@ -36,7 +36,7 @@ abstract class Crumble::Page
     {% unless klass || blk %}{% raise "Provide a view class or block" %}{% end %}
 
     {% if blk %}
-      {% warning "Crumble::Page view do ... end is deprecated; use template do ... end directly on the page." %}
+      {% @caller.first.warning "Crumble::Page view do ... end is deprecated; use template do ... end directly on the page." %}
       {{blk.body}}
     {% else %}
       def page_view
