@@ -1,25 +1,19 @@
 require "./spec_helper"
 
 module Crumble::PageSpec
-  class ViewFromClass
-    include Crumble::ContextView
-
+  class ClassViewPage < Crumble::Page
     template do
       html do
         head do
-          if title = ctx.handler.window_title
+          if title = window_title
             title { title }
           end
         end
         body do
-          h1 { "Rendered from class view" }
+          h1 { "Rendered from page template" }
         end
       end
     end
-  end
-
-  class ClassViewPage < Crumble::Page
-    view ViewFromClass
 
     def window_title
       "Page Title"
@@ -27,12 +21,10 @@ module Crumble::PageSpec
   end
 
   class BlockPage < Crumble::Page
-    view do
-      template do
-        html do
-          body do
-            p { "Inline page for #{ctx.request.path}" }
-          end
+    template do
+      html do
+        body do
+          p { "Inline page for #{ctx.request.path}" }
         end
       end
     end
@@ -63,10 +55,8 @@ module Crumble::PageSpec
   end
 
   class LayoutPage < Crumble::Page
-    view do
-      template do
-        div { "inside" }
-      end
+    template do
+      div { "inside" }
     end
 
     layout PageLayout
@@ -75,12 +65,10 @@ module Crumble::PageSpec
   class IdPage < Crumble::Page
     path_param id
 
-    view do
-      template do
-        html do
-          body do
-            h1 { "ID: #{ctx.handler.as(Crumble::PageSpec::IdPage).id}" }
-          end
+    template do
+      html do
+        body do
+          h1 { "ID: #{id}" }
         end
       end
     end
@@ -90,24 +78,20 @@ module Crumble::PageSpec
     path_param id
     nested_path "details"
 
-    view do
-      template do
-        html do
-          body do
-            h1 { "Nested ID: #{ctx.handler.as(Crumble::PageSpec::NestedPage).id}" }
-          end
+    template do
+      html do
+        body do
+          h1 { "Nested ID: #{id}" }
         end
       end
     end
   end
 
   class TopLevelOnlyPage < Crumble::Page
-    view do
-      template do
-        html do
-          body do
-            h1 { "Top level" }
-          end
+    template do
+      html do
+        body do
+          h1 { "Top level" }
         end
       end
     end
@@ -116,12 +100,10 @@ module Crumble::PageSpec
   class CustomRootPathPage < Crumble::Page
     root_path "/custom"
 
-    view do
-      template do
-        html do
-          body do
-            h1 { "Custom root path" }
-          end
+    template do
+      html do
+        body do
+          h1 { "Custom root path" }
         end
       end
     end
@@ -134,13 +116,10 @@ module Crumble::PageSpec
     nested_path "edit"
     nested_path "details"
 
-    view do
-      template do
-        html do
-          body do
-            page = ctx.handler.as(Crumble::PageSpec::MultiParamPage)
-            h1 { "account_id=#{page.account_id} slug=#{page.slug}" }
-          end
+    template do
+      html do
+        body do
+          h1 { "account_id=#{account_id} slug=#{slug}" }
         end
       end
     end
@@ -150,12 +129,10 @@ module Crumble::PageSpec
     root_path "/sym_param"
     path_param :id
 
-    view do
-      template do
-        html do
-          body do
-            h1 { "Symbol ID: #{ctx.handler.as(Crumble::PageSpec::SymbolNameParamPage).id}" }
-          end
+    template do
+      html do
+        body do
+          h1 { "Symbol ID: #{id}" }
         end
       end
     end
@@ -165,34 +142,18 @@ module Crumble::PageSpec
     root_path "/str_param"
     path_param "id"
 
-    view do
-      template do
-        html do
-          body do
-            h1 { "String ID: #{ctx.handler.as(Crumble::PageSpec::StringNameParamPage).id}" }
-          end
+    template do
+      html do
+        body do
+          h1 { "String ID: #{id}" }
         end
       end
     end
   end
 
-  class TemplateThenViewPage < Crumble::Page
+  class TemplateThenTemplatePage < Crumble::Page
     template do
       p { "template first" }
-    end
-
-    view do
-      template do
-        p { "view second" }
-      end
-    end
-  end
-
-  class ViewThenTemplatePage < Crumble::Page
-    view do
-      template do
-        p { "view first" }
-      end
     end
 
     template do
@@ -202,18 +163,18 @@ module Crumble::PageSpec
 end
 
 describe Crumble::Page do
-  it "renders a ContextView class via the view macro" do
+  it "renders a page template directly" do
     res = String.build do |io|
       ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::ClassViewPage.uri_path)
       Crumble::PageSpec::ClassViewPage.handle(ctx).should eq(true)
       ctx.response.flush
     end
 
-    res.should contain("<h1>Rendered from class view</h1>")
+    res.should contain("<h1>Rendered from page template</h1>")
     res.should contain("<title>Page Title</title>")
   end
 
-  it "renders an inline view block" do
+  it "renders an inline page template" do
     res = String.build do |io|
       ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::BlockPage.uri_path)
       Crumble::PageSpec::BlockPage.handle(ctx).should eq(true)
@@ -223,7 +184,7 @@ describe Crumble::Page do
     res.should contain("Inline page for #{Crumble::PageSpec::BlockPage.uri_path}")
   end
 
-  it "does not generate a nested View class for block-defined views" do
+  it "does not generate a nested View class for template-defined pages" do
     {{Crumble::PageSpec::BlockPage.constants.map(&.id.stringify).includes?("View")}}.should be_false
   end
 
@@ -318,25 +279,14 @@ describe Crumble::Page do
     res.should contain("String ID: 11")
   end
 
-  it "uses view block template when declared after template" do
+  it "uses the last template when declared twice" do
     res = String.build do |io|
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::TemplateThenViewPage.uri_path)
-      Crumble::PageSpec::TemplateThenViewPage.handle(ctx).should eq(true)
-      ctx.response.flush
-    end
-
-    res.should contain("view second")
-    res.should_not contain("template first")
-  end
-
-  it "uses template when declared after view block template" do
-    res = String.build do |io|
-      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::ViewThenTemplatePage.uri_path)
-      Crumble::PageSpec::ViewThenTemplatePage.handle(ctx).should eq(true)
+      ctx = Crumble::Server::TestRequestContext.new(response_io: io, resource: Crumble::PageSpec::TemplateThenTemplatePage.uri_path)
+      Crumble::PageSpec::TemplateThenTemplatePage.handle(ctx).should eq(true)
       ctx.response.flush
     end
 
     res.should contain("template second")
-    res.should_not contain("view first")
+    res.should_not contain("template first")
   end
 end
