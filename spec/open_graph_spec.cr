@@ -2,10 +2,8 @@ require "./spec_helper"
 
 module Crumble::OpenGraphSpec
   class OpenGraphPage < Crumble::Page
-    view do
-      template do
-        div { "Open Graph" }
-      end
+    template do
+      div { "Open Graph" }
     end
 
     layout ToHtml::Layout
@@ -64,10 +62,8 @@ module Crumble::OpenGraphSpec
   end
 
   class DefaultOpenGraphPage < Crumble::Page
-    view do
-      template do
-        div { "Default" }
-      end
+    template do
+      div { "Default" }
     end
 
     layout ToHtml::Layout
