@@ -1,5 +1,5 @@
 name: crumble
-version: 0.30.0
+version: 0.31.0
 crystal: ">= 1.18.0"
 
 dependencies:
@@ -10,6 +10,7 @@ dependencies:
     github: sbsoftware/css.cr
   js:
     github: sbsoftware/js.cr
+    version: ">= 1.8.0"
   opentelemetry-sdk:
     github: wyhaines/opentelemetry-sdk.cr
 

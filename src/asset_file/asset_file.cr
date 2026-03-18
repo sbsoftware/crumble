@@ -5,11 +5,16 @@ class AssetFile
   getter uri_path : String
   getter contents : String
   getter etag : String
+  getter immutable : Bool
 
-  def initialize(uri_path, @contents)
+  def initialize(uri_path, @contents, @immutable : Bool = true)
     @etag = Digest::MD5.hexdigest(@contents)
-    file, _, extension = uri_path.rpartition('.')
-    @uri_path = "#{file}_#{etag}.#{extension}"
+    @uri_path = if @immutable
+                  file, _, extension = uri_path.rpartition('.')
+                  "#{file}_#{etag}.#{extension}"
+                else
+                  uri_path
+                end
     AssetFileRegistry.add(@uri_path, self)
   end
 

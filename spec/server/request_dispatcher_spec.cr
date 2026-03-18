@@ -11,11 +11,9 @@ module Crumble::Server::RequestDispatcherPageSpec
   class HomePage < Crumble::Page
     root_path "/root-handler-page"
 
-    view do
-      template do
-        html do
-          body { "page handled" }
-        end
+    template do
+      html do
+        body { "page handled" }
       end
     end
   end
@@ -132,6 +130,7 @@ describe Crumble::Server::RequestDispatcher do
     handler = Crumble::Server::RequestDispatcher.new
 
     asset = CssFile.new("/root-handler-asset.css", "body{color:red}")
+    asset.uri_path.should match(/\/root-handler-asset_[a-f0-9]{32}\.css/)
     request = Crumble::Server::TestRequest.new(resource: asset.uri_path)
     response = dispatch_request(handler, request)
 
@@ -140,6 +139,21 @@ describe Crumble::Server::RequestDispatcher do
     response.headers["ETag"].should eq(asset.etag)
     response.headers["Cache-Control"].should contain("immutable")
     response.body.should eq("body{color:red}")
+  end
+
+  it "delivers non-immutable asset files with revalidation-friendly cache headers" do
+    handler = Crumble::Server::RequestDispatcher.new
+
+    asset = JavascriptFile.new("/root-handler-mutable.js", "console.log('mutable')", immutable: false)
+    asset.uri_path.should eq("/root-handler-mutable.js")
+    request = Crumble::Server::TestRequest.new(resource: asset.uri_path)
+    response = dispatch_request(handler, request)
+
+    response.status_code.should eq(200)
+    response.headers["Content-Type"].should eq("application/javascript")
+    response.headers["ETag"].should eq(asset.etag)
+    response.headers["Cache-Control"].should eq("public, max-age=0, must-revalidate")
+    response.body.should eq("console.log('mutable')")
   end
 
   it "returns 304 for asset files when ETag matches" do

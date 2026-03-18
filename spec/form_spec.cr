@@ -70,6 +70,27 @@ class Crumble::FormSpec
     field count : Int32, allow_blank: false
   end
 
+  class CustomValidationForm < Crumble::Form
+    field my_field : String? do
+      validation do
+        if my_field != "my_value"
+          add_error("No match!")
+          add_error("Expected my_value")
+        end
+      end
+    end
+
+    field some_field : String?
+    field other_field : String?
+
+    validation do
+      if some_field != "foo" && other_field == "blah"
+        add_error("Wrong")
+        add_error("Still wrong")
+      end
+    end
+  end
+
   class ControllerAttr
     def self.to_html_attrs(_tag, attrs)
       attrs["data-controller"] = "signup"
@@ -262,9 +283,18 @@ class Crumble::FormSpec
   end
 
   describe "AllowBlankForm" do
-    it "adds errors for empty strings after after_submit" do
+    it "checks built-in validity on fresh forms but does not render errors" do
       ctx = test_handler_context
       form = AllowBlankForm.new(ctx, name: "   ", optional: "", count: 1)
+
+      form.valid?.should be_false
+      form.errors.should eq(["name", "optional"])
+      form.to_html.should_not contain("crumble--field-errors")
+    end
+
+    it "adds errors for empty strings after after_submit" do
+      ctx = test_handler_context
+      form = AllowBlankForm.from_www_form(ctx, URI::Params.encode({name: "   ", optional: "", count: "1"}))
 
       form.valid?.should be_false
       form.errors.should eq(["name", "optional"])
@@ -272,10 +302,70 @@ class Crumble::FormSpec
 
     it "ignores nil values and non-string fields" do
       ctx = test_handler_context
-      form = AllowBlankForm.new(ctx, name: "Bob", optional: nil, count: 0)
+      form = AllowBlankForm.from_www_form(ctx, URI::Params.encode({name: "Bob", count: "0"}))
 
       form.valid?.should be_true
       form.errors.should eq([] of String)
+    end
+  end
+
+  describe "CustomValidationForm" do
+    it "runs custom validations on fresh forms but does not render errors" do
+      ctx = test_handler_context
+      form = CustomValidationForm.new(ctx, my_field: "x", some_field: "bar", other_field: "blah")
+
+      form.valid?.should be_false
+      form.errors.should eq(["No match!", "Expected my_value", "Wrong", "Still wrong"])
+      form.to_html.should_not contain("crumble--form-errors")
+      form.to_html.should_not contain("crumble--field-errors")
+    end
+
+    it "collects field and form errors in deterministic order on submit" do
+      ctx = test_handler_context
+      form = CustomValidationForm.from_www_form(ctx, URI::Params.encode({my_field: "x", some_field: "bar", other_field: "blah"}))
+
+      form.valid?.should be_false
+      form.error_entries.should eq([
+        {:my_field, "No match!"},
+        {:my_field, "Expected my_value"},
+        {:_base, "Wrong"},
+        {:_base, "Still wrong"},
+      ])
+      form.errors.should eq(["No match!", "Expected my_value", "Wrong", "Still wrong"])
+    end
+
+    it "renders _base errors at the top and field errors below the field" do
+      ctx = test_handler_context
+      form = CustomValidationForm.from_www_form(ctx, URI::Params.encode({my_field: "x", some_field: "bar", other_field: "blah"}))
+      form.valid?
+      expected = <<-HTML.squish
+      <div class="crumble--form-errors"><ul><li>Wrong</li><li>Still wrong</li></ul></div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--custom-validation-form--my-field-field-id">My_field</label>
+        <input id="crumble--form-spec--custom-validation-form--my-field-field-id" type="text" name="my_field" value="x">
+        <ul class="crumble--field-errors"><li>No match!</li><li>Expected my_value</li></ul>
+      </div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--custom-validation-form--some-field-field-id">Some_field</label>
+        <input id="crumble--form-spec--custom-validation-form--some-field-field-id" type="text" name="some_field" value="bar">
+      </div>
+      <div class="crumble--field">
+        <label for="crumble--form-spec--custom-validation-form--other-field-field-id">Other_field</label>
+        <input id="crumble--form-spec--custom-validation-form--other-field-field-id" type="text" name="other_field" value="blah">
+      </div>
+      HTML
+
+      form.to_html.should eq(expected)
+    end
+
+    it "shows no validation errors for valid submitted input" do
+      ctx = test_handler_context
+      form = CustomValidationForm.from_www_form(ctx, URI::Params.encode({my_field: "my_value", some_field: "foo", other_field: "blah"}))
+
+      form.valid?.should be_true
+      form.errors.should eq([] of String)
+      form.to_html.should_not contain("crumble--form-errors")
+      form.to_html.should_not contain("crumble--field-errors")
     end
   end
 end
