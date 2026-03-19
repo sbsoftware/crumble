@@ -72,9 +72,13 @@ class Crumble::CLI
     ensure_file("#{VIEWS_FOLDER}/application_layout.cr", {{read_file "#{__DIR__}/cli/templates/application_layout.cr"}})
     ensure_file("#{PAGES_FOLDER}/application_page.cr", {{read_file "#{__DIR__}/cli/templates/application_page.cr"}})
     ensure_file("#{PAGES_FOLDER}/welcome_page.cr", {{read_file "#{__DIR__}/cli/templates/welcome_page.cr"}})
-
-    ensure_file("watch.sh", "#!/usr/bin/env sh\n\nlib/crumble/src/watch.sh #{@name} #{@local_port}\n", 0o755)
+    ensure_file(".env", {{read_file "#{__DIR__}/cli/templates/.env"}})
+    ensure_file("watch.sh", watch_script_template, 0o755)
     ensure_file("AGENTS.md", {{read_file "#{__DIR__}/cli/templates/AGENTS.md"}})
+  end
+
+  def watch_script_template
+    {{read_file "#{__DIR__}/cli/templates/watch.sh"}}.gsub("__CRUMBLE_NAME__", @name.to_s).gsub("__CRUMBLE_PORT__", @local_port.to_s)
   end
 
   def log_verbose(str)
