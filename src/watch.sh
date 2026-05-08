@@ -14,7 +14,7 @@ export LOG_LEVEL="${LOG_LEVEL:-trace}"
 
 # The bin watcher starts before the first compile completes, so skip the initial
 # run until the compiler has produced a binary to execute.
-watchexec -r -w "./bin" -f $PROJ_FILENAME --fs-events metadata --no-vcs-ignore "if [ -f \"$BIN_FILENAME\" ]; then \"$BIN_FILENAME\" -p \"$PORT\"; fi" &
+watchexec -r -w "./bin" -f $PROJ_FILENAME --no-vcs-ignore "if [ -f \"$BIN_FILENAME\" ]; then \"$BIN_FILENAME\" -p \"$PORT\"; fi" &
 RUN_PID=$!
 
 cleanup() {
