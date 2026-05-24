@@ -77,7 +77,7 @@ abstract class Crumble::Resource
   end
 
   def self.root_path
-    _path_matching_derived_root_path
+    "/" + self.name.chomp("Resource").gsub("::", "/").underscore
   end
 
   def self.root_path(id)
@@ -213,11 +213,7 @@ abstract class Crumble::Resource
   end
 
   def nested?
-    unless self.class._path_parts.empty?
-      return self.class._path_parts.any? { |part| part.is_a?(Crumble::PathMatching::NestedPathPart) }
-    end
-
-    false
+    self.class._path_parts.any? { |part| part.is_a?(Crumble::PathMatching::NestedPathPart) }
   end
 
   def top_level?

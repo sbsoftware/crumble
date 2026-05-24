@@ -46,14 +46,10 @@ module Crumble::PathMatching
       uri_path_matcher.match(path)
     end
 
-    def self._path_matching_derived_root_path
+    def self._root_path
       suffix = _path_matching_root_suffix
       base_name = suffix.empty? ? self.name : self.name.chomp(suffix)
       "/" + base_name.gsub("::", "/").underscore
-    end
-
-    def self._root_path
-      _path_matching_derived_root_path
     end
 
     def self.uri_path(**params)
@@ -87,20 +83,16 @@ module Crumble::PathMatching
     end
 
     def self.uri_path_matcher
-      segment_patterns = _path_matching_segment_patterns
+      root_segments = _root_path.split('/').reject(&.empty?)
+      segment_patterns = root_segments.map { |seg| Regex.escape(seg) }
+
+      segment_patterns.concat(_path_parts.map(&.segment_pattern))
 
       if segment_patterns.empty?
         /^\/$/
       else
         Regex.new("^/" + segment_patterns.join("/") + "/?$")
       end
-    end
-
-    def self._path_matching_segment_patterns
-      root_segments = _root_path.split('/').reject(&.empty?)
-      segment_patterns = root_segments.map { |seg| Regex.escape(seg) }
-
-      segment_patterns.concat(_path_parts.map(&.segment_pattern))
     end
 
     protected def path_params : Hash(String, String)
