@@ -9,10 +9,6 @@ abstract class Crumble::Resource
     "Resource"
   end
 
-  def self._root_path
-    root_path
-  end
-
   macro before(&blk)
     before(:index, :create, :show, :update, :destroy) {{blk}}
   end
@@ -77,7 +73,7 @@ abstract class Crumble::Resource
   end
 
   def self.root_path
-    "/" + self.name.chomp("Resource").gsub("::", "/").underscore
+    _root_path
   end
 
   def self.root_path(id)
