@@ -72,41 +72,16 @@ abstract class Crumble::Resource
     return true
   end
 
-  def self.root_path
-    _root_path
-  end
-
-  def self.root_path(id)
-    "#{root_path}/#{id}"
-  end
-
-  macro root_path(path)
-    def self._root_path
-      {{path}}
-    end
-
-    def self.root_path
-      {{path}}
-    end
-  end
-
-  macro nested_path(path)
-    PATH_PARTS << Crumble::PathMatching::NestedPathPart.new({{path}})
-  end
-
   def self.uri_path(id = nil)
-    return root_path unless id
+    return _root_path unless id
     return _path_matching_uri_path(id: id) unless _path_parts.empty?
-    "#{root_path}/#{id}"
-  end
-
-  def self.uri_path(**params)
-    _path_matching_uri_path(**params)
+    root = _root_path.chomp("/")
+    root.empty? ? "/#{id}" : "#{root}/#{id}"
   end
 
   def self.uri_path_matcher
     if _path_parts.empty?
-      root = root_path.chomp("/")
+      root = _root_path.chomp("/")
       escaped_root = Regex.escape(root)
       root.empty? ? /^\/(?:(?<id>\d+)\/?)?$/ : Regex.new("^#{escaped_root}(?:/(?<id>\\d+))?/?$")
     else
