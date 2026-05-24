@@ -94,19 +94,6 @@ abstract class Crumble::Resource
     end
   end
 
-  @[Deprecated("Use nested_path \"...\" declarations instead.")]
-  def self.nested_path
-    ""
-  end
-
-  def self._legacy_nested_path
-    {% if @type.class.methods.map(&.name.stringify).includes?("nested_path") %}
-      nested_path
-    {% else %}
-      ""
-    {% end %}
-  end
-
   macro nested_path(path)
     PATH_PARTS << Crumble::PathMatching::NestedPathPart.new({{path}})
   end
@@ -114,7 +101,7 @@ abstract class Crumble::Resource
   def self.uri_path(id = nil)
     return root_path unless id
     return _path_matching_uri_path(id: id) unless _path_parts.empty?
-    "#{root_path}/#{id}#{_legacy_nested_path}"
+    "#{root_path}/#{id}"
   end
 
   def self.uri_path(**params)
@@ -125,16 +112,7 @@ abstract class Crumble::Resource
     if _path_parts.empty?
       root = root_path.chomp("/")
       escaped_root = Regex.escape(root)
-
-      legacy_nested_path = _legacy_nested_path
-
-      if legacy_nested_path.empty?
-        root.empty? ? /^\/(?:(?<id>\d+)\/?)?$/ : Regex.new("^#{escaped_root}(?:/(?<id>\\d+))?/?$")
-      else
-        # A nested resource path belongs to the nested endpoint only; the parent collection/member path must stay available to its own resource.
-        escaped_nested_path = Regex.escape(legacy_nested_path)
-        root.empty? ? Regex.new("^/(?<id>\\d+)#{escaped_nested_path}/?$") : Regex.new("^#{escaped_root}/(?<id>\\d+)#{escaped_nested_path}/?$")
-      end
+      root.empty? ? /^\/(?:(?<id>\d+)\/?)?$/ : Regex.new("^#{escaped_root}(?:/(?<id>\\d+))?/?$")
     else
       previous_def
     end
@@ -239,7 +217,7 @@ abstract class Crumble::Resource
       return self.class._path_parts.any? { |part| part.is_a?(Crumble::PathMatching::NestedPathPart) }
     end
 
-    self.class._legacy_nested_path.size > 0
+    false
   end
 
   def top_level?

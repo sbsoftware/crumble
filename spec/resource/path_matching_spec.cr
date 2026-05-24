@@ -29,20 +29,6 @@ module Crumble::Resource::PathMatchingSpec
     end
   end
 
-  class LegacyNestedResource < Resource
-    def self.root_path
-      "/legacy-nested"
-    end
-
-    def self.nested_path
-      "/details"
-    end
-
-    def index
-      render "legacy id=#{id}"
-    end
-  end
-
   describe "RootResource.match" do
     it "should match on /" do
       RootResource.match("/").should be_truthy
@@ -76,15 +62,6 @@ module Crumble::Resource::PathMatchingSpec
       NestedMemberResource.match(NestedMemberResource.uri_path(id: 7)).should be_truthy
       NestedMemberResource.match("/nested-members/7").should be_falsey
       NestedMemberResource.match("/nested-members").should be_falsey
-    end
-  end
-
-  describe "LegacyNestedResource.match" do
-    it "does not match the parent collection or member path without the nested component" do
-      LegacyNestedResource.uri_path(7).should eq("/legacy-nested/7/details")
-      LegacyNestedResource.match(LegacyNestedResource.uri_path(7)).should be_truthy
-      LegacyNestedResource.match("/legacy-nested/7").should be_falsey
-      LegacyNestedResource.match("/legacy-nested").should be_falsey
     end
   end
 end
