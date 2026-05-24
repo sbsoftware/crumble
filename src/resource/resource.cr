@@ -83,6 +83,7 @@ abstract class Crumble::Resource
     if _path_parts.empty?
       root = _root_path.chomp("/")
       escaped_root = Regex.escape(root)
+      # Plain resources keep REST collection/member routes; the named capture feeds #id? through PathMatching#path_params.
       root.empty? ? /^\/(?:(?<id>\d+)\/?)?$/ : Regex.new("^#{escaped_root}(?:/(?<id>\\d+))?/?$")
     else
       previous_def
