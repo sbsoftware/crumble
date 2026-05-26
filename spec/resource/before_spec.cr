@@ -12,6 +12,8 @@ module Crumble::Resource::BeforeSpec
   end
 
   class Res1 < Parent
+    path_param id
+
     before(:show) do
       true
     end
@@ -30,6 +32,8 @@ module Crumble::Resource::BeforeSpec
   end
 
   class Res2 < Parent
+    path_param id
+
     def index
       raise "This should not be reached!"
     end

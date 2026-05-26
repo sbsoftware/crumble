@@ -50,7 +50,7 @@ abstract class Crumble::Resource
 
     case ctx.request.method
     when "GET"
-      if instance.id? && instance.top_level?
+      if instance.member?
         before_action_handling(instance, :show)
         instance.show
       else
@@ -58,7 +58,7 @@ abstract class Crumble::Resource
         instance.index
       end
     when "POST"
-      if instance.id? && instance.top_level?
+      if instance.member?
         before_action_handling(instance, :update)
         instance.update
       else
@@ -74,20 +74,31 @@ abstract class Crumble::Resource
 
   def self.uri_path(id = nil)
     return _root_path unless id
-    return _path_matching_uri_path(id: id) unless _path_parts.empty?
-    root = _root_path.chomp("/")
-    root.empty? ? "/#{id}" : "#{root}/#{id}"
+    raise ArgumentError.new("Cannot build a member path for #{self} without path params") if _path_parts.empty?
+    _path_matching_uri_path(id: id)
   end
 
   def self.uri_path_matcher
-    if _path_parts.empty?
-      root = _root_path.chomp("/")
-      escaped_root = Regex.escape(root)
-      # Plain resources keep REST collection/member routes; the named capture feeds #id? through PathMatching#path_params.
-      root.empty? ? /^\/(?:(?<id>\d+)\/?)?$/ : Regex.new("^#{escaped_root}(?:/(?<id>\\d+))?/?$")
+    if path_param?
+      collection_pattern = _root_path_segment_patterns.empty? ? "/" : "/" + _root_path_segment_patterns.join("/")
+      member_pattern = "/" + (_root_path_segment_patterns + _path_parts.map(&.segment_pattern)).join("/")
+
+      if collection_pattern == "/"
+        Regex.new("^(?:/|#{member_pattern}/?)$")
+      else
+        Regex.new("^(?:#{collection_pattern}|#{member_pattern})/?$")
+      end
     else
       previous_def
     end
+  end
+
+  def self.path_param?
+    _path_parts.any? { |part| part.is_a?(Crumble::PathMatching::ParamPathPart) }
+  end
+
+  def self._root_path_segment_patterns
+    _root_path.split('/').reject(&.empty?).map { |seg| Regex.escape(seg) }
   end
 
   def initialize(@request_ctx); end
@@ -182,6 +193,10 @@ abstract class Crumble::Resource
 
   def id
     id?.not_nil!
+  end
+
+  def member?
+    path_params.size > 0
   end
 
   def nested?

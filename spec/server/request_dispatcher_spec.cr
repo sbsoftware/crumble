@@ -43,6 +43,7 @@ end
 module Crumble::Server::RequestDispatcherResourceSpec
   class WidgetResource < Crumble::Resource
     root_path "/root-handler-resource"
+    path_param id
 
     def index
       ctx.response.print "resource index"

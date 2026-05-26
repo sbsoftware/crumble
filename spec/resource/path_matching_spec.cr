@@ -13,6 +13,10 @@ module Crumble::Resource::PathMatchingSpec
     nested_path "details"
 
     def index
+      render "accounts index"
+    end
+
+    def show
       render "account_id=#{account_id} slug=#{slug}"
     end
   end
@@ -22,7 +26,7 @@ module Crumble::Resource::PathMatchingSpec
     path_param id
     nested_path "details"
 
-    def index
+    def show
       render "nested id=#{id}"
     end
   end
@@ -35,10 +39,15 @@ module Crumble::Resource::PathMatchingSpec
     it "should not match on any other path ending on /" do
       RootResource.match("/test/").should be_falsey
     end
+
+    it "does not match member paths without declared params" do
+      RootResource.match("/1").should be_falsey
+    end
   end
 
   describe "PageStyleResource.match" do
     it "supports the same path matching declarations as pages" do
+      PageStyleResource.match("/accounts").should be_truthy
       PageStyleResource.uri_path(account_id: 123, slug: "hello-world").should eq("/accounts/123/hello-world/posts/details")
       PageStyleResource.match("/accounts/123/hello-world/posts/details").should be_truthy
       PageStyleResource.match("/accounts/123/hello_world/posts/details").should be_falsey
@@ -57,9 +66,9 @@ module Crumble::Resource::PathMatchingSpec
 
   describe "NestedMemberResource.match" do
     it "does not match the parent member path without the nested component" do
+      NestedMemberResource.match("/nested-members").should be_truthy
       NestedMemberResource.match(NestedMemberResource.uri_path(id: 7)).should be_truthy
       NestedMemberResource.match("/nested-members/7").should be_falsey
-      NestedMemberResource.match("/nested-members").should be_falsey
     end
   end
 end
