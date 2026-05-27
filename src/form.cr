@@ -33,6 +33,12 @@ module Crumble
           {% key.raise "Not a field: #{key}" %}
         {% end %}
       {% end %}
+
+      {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+        {% unless T.keys.map(&.id).includes?(ivar.name) %}
+          @{{ivar.name}} = __default_value_{{ivar.name.id}}
+        {% end %}
+      {% end %}
     end
 
     def submitted? : Bool
@@ -191,6 +197,10 @@ module Crumble
           {{after_submit_block.body}}
         end
       {% end %}
+
+      private def __default_value_{{field_name.id}} : {{field_type}}?
+        {{type_decl.value}}
+      end
 
       private def __apply_before_render_{{field_name.id}}(value : {{field_type}}?) : {{field_type}}?
         {% if before_render_block %}
