@@ -1,5 +1,5 @@
 name: crumble
-version: 0.31.2
+version: 0.31.3
 crystal: ">= 1.18.0"
 
 dependencies:
