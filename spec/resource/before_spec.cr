@@ -3,7 +3,7 @@ require "../spec_helper"
 module Crumble::Resource::BeforeSpec
   class Parent < Crumble::Resource
     before do
-      if id?
+      if member?
         true
       else
         false

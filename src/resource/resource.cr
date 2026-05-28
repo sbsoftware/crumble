@@ -187,14 +187,6 @@ abstract class Crumble::Resource
     ctx.response.print "Not Found"
   end
 
-  def id?
-    path_params["id"]?.try(&.to_i64?)
-  end
-
-  def id
-    id?.not_nil!
-  end
-
   def member?
     path_params.size > 0
   end
