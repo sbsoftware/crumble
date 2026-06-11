@@ -50,6 +50,7 @@ module Crumble::Resource::PathMatchingSpec
       PageStyleResource.match("/accounts").should be_truthy
       PageStyleResource.uri_path(account_id: 123, slug: "hello-world").should eq("/accounts/123/hello-world/posts/details")
       PageStyleResource.match("/accounts/123/hello-world/posts/details").should be_truthy
+      PageStyleResource.match("/accounts/123").should be_falsey
       PageStyleResource.match("/accounts/123/hello_world/posts/details").should be_falsey
     end
 
