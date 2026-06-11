@@ -53,6 +53,10 @@ module Crumble::PathMatching
     end
 
     def self.uri_path(**params)
+      _path_matching_uri_path(**params)
+    end
+
+    def self._path_matching_uri_path(**params)
       param_values = {} of Symbol => String
       params.each do |key, value|
         param_values[key] = value.to_s

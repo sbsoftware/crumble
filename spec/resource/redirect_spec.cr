@@ -2,6 +2,8 @@ require "../spec_helper"
 
 module Crumble::Resource::RedirectSpec
   class MyResource < Resource
+    path_param id
+
     def create
       redirect self.class.uri_path(1)
     end

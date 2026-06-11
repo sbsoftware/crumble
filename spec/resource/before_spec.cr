@@ -3,7 +3,7 @@ require "../spec_helper"
 module Crumble::Resource::BeforeSpec
   class Parent < Crumble::Resource
     before do
-      if id?
+      if member?
         true
       else
         false
@@ -12,6 +12,8 @@ module Crumble::Resource::BeforeSpec
   end
 
   class Res1 < Parent
+    path_param id
+
     before(:show) do
       true
     end
@@ -30,6 +32,8 @@ module Crumble::Resource::BeforeSpec
   end
 
   class Res2 < Parent
+    path_param id
+
     def index
       raise "This should not be reached!"
     end

@@ -2,6 +2,8 @@ require "../spec_helper"
 
 module Crumble::Resource::RoutingSpec
   class MyResource < Resource
+    path_param id
+
     def index
       render "Index!"
     end
