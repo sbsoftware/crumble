@@ -39,6 +39,17 @@ module Crumble
       @submitted
     end
 
+    # Builds a fresh, unsubmitted form for `ctx` without reading request data.
+    # Defaults come from the form's normal initializer, matching its initial render state.
+    def self.fresh(ctx : Crumble::Server::HandlerContext) : self
+      new(ctx)
+    end
+
+    # Builds a fresh, unsubmitted form for the same context without reading request data.
+    def fresh
+      self.class.fresh(ctx)
+    end
+
     def errors : Array(String)?
       @errors.try(&.map(&.[1]))
     end
@@ -235,7 +246,11 @@ module Crumble
         @[Nilable]
       {% end %}
 
-      getter {{field_name}} : {{field_type}}?
+      {% if type_decl.value %}
+        getter {{field_name}} : {{field_type}}? = {{type_decl.value}}
+      {% else %}
+        getter {{field_name}} : {{field_type}}?
+      {% end %}
 
       css_id {{field_name.id.stringify.camelcase.id}}FieldId
     end

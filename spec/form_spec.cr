@@ -59,6 +59,28 @@ class Crumble::FormSpec
     end
   end
 
+  class FreshForm < Crumble::Form
+    field name : String = " Alice " do
+      before_render do |value|
+        value.upcase
+      end
+
+      after_submit do |value|
+        value.strip
+      end
+    end
+
+    field code : String? = " xy " do
+      before_render do |value|
+        value.try(&.upcase)
+      end
+
+      after_submit do |value|
+        value.try(&.strip)
+      end
+    end
+  end
+
   class AllowBlankForm < Crumble::Form
     field name : String, allow_blank: false do
       after_submit do |value|
@@ -219,6 +241,28 @@ class Crumble::FormSpec
       form = TransformForm.from_www_form(ctx, URI::Params.encode({name: "  Bob ", code: "  xy "}))
 
       form.values.should eq({name: "Bob", code: "xy"})
+    end
+  end
+
+  describe "FreshForm" do
+    it "builds a fresh unsubmitted form with field defaults" do
+      ctx = test_handler_context
+      form = FreshForm.fresh(ctx)
+
+      form.submitted?.should be_false
+      form.values.should eq({name: " Alice ", code: " xy "})
+      form.to_html.should contain(%(name="name" value=" ALICE "))
+      form.to_html.should contain(%(name="code" value=" XY "))
+    end
+
+    it "builds a fresh form for the same context from a submitted instance" do
+      ctx = test_handler_context
+      submitted = FreshForm.from_www_form(ctx, URI::Params.encode({name: "  Bob ", code: "  zz "}))
+      fresh = submitted.fresh
+
+      fresh.ctx.request_context.should be(ctx.request_context)
+      fresh.submitted?.should be_false
+      fresh.values.should eq({name: " Alice ", code: " xy "})
     end
   end
 

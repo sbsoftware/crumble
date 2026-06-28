@@ -140,13 +140,16 @@ end
 form = ProfileForm.from_www_form(ctx, ctx.request.body.try(&.gets_to_end) || "")
 form.valid? # => false if any non-nilable field is nil
 form.values # => {name: "...", bio: nil, slug: "..."}
+fresh_form = form.fresh # => a new unsubmitted ProfileForm for the same context
 ```
 
 - Each `field` supports `type:`, `label:`, and `attrs:` options for rendering.
 - `attrs:` accepts attribute providers (implementing `to_html_attrs`), a named tuple of HTML attributes, or a mix of both.
+- Use `field name : String = "Alice"` to set the fresh form's default field value.
 - Override `default_label_caption(field)` in your form to customize default label text.
 - `before_render` transforms a field value right before rendering its `<input>`.
 - `after_submit` transforms a field value whenever it is assigned (including `from_www_form`).
+- `fresh(ctx)` and `form.fresh` create a fresh unsubmitted form from normal defaults without parsing request data.
 
 ### Resources
 
