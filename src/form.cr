@@ -53,6 +53,13 @@ module Crumble
       @errors
     end
 
+    # Builds a fresh, unsubmitted form for the same context as this form using
+    # the form's declared field defaults. This does not parse or read the
+    # request body.
+    def fresh : self
+      self.class.new(ctx)
+    end
+
     def self.from_www_form(ctx : Crumble::Server::HandlerContext, www_form : ::String) : self
       from_www_form(ctx, ::URI::Params.parse(www_form))
     end
