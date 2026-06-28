@@ -279,10 +279,14 @@ class Crumble::FormSpec
     end
   end
 
-  describe ".fresh" do
+  describe "#fresh" do
     it "builds an unsubmitted form with declared defaults" do
       ctx = test_handler_context
-      form = DefaultValueForm.fresh(ctx)
+      submitted_form = DefaultValueForm.from_www_form(ctx, URI::Params.encode({
+        access_token: "submitted-token",
+        name:         "Submitted name",
+      }))
+      form = submitted_form.fresh
 
       form.ctx.should eq(ctx)
       form.submitted?.should be_false
@@ -291,7 +295,11 @@ class Crumble::FormSpec
 
     it "does not read or parse the request body" do
       ctx = test_handler_context(method: "POST", body: URI::Params.encode({name: "Body value"}))
-      form = DefaultValueForm.fresh(ctx)
+      submitted_form = DefaultValueForm.from_www_form(ctx, URI::Params.encode({
+        access_token: "submitted-token",
+        name:         "Submitted name",
+      }))
+      form = submitted_form.fresh
 
       form.values.should eq({access_token: "default-token", name: "  Default name  "})
       ctx.request.body.try(&.gets_to_end).should eq("name=Body+value")
