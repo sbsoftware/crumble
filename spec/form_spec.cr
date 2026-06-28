@@ -72,6 +72,18 @@ class Crumble::FormSpec
     end
   end
 
+  class TransformedDefaultValueForm < Crumble::Form
+    field name : String = "  default name  " do
+      before_render do |value|
+        value.upcase
+      end
+
+      after_submit do |value|
+        value.strip
+      end
+    end
+  end
+
   class AllowBlankForm < Crumble::Form
     field name : String, allow_blank: false do
       after_submit do |value|
@@ -264,6 +276,43 @@ class Crumble::FormSpec
       }))
 
       form.values.should eq({access_token: "submitted-token", name: "Submitted name"})
+    end
+  end
+
+  describe ".fresh" do
+    it "builds an unsubmitted form with declared defaults" do
+      ctx = test_handler_context
+      form = DefaultValueForm.fresh(ctx)
+
+      form.ctx.should eq(ctx)
+      form.submitted?.should be_false
+      form.values.should eq({access_token: "default-token", name: "  Default name  "})
+    end
+
+    it "does not read or parse the request body" do
+      ctx = test_handler_context(method: "POST", body: URI::Params.encode({name: "Body value"}))
+      form = DefaultValueForm.fresh(ctx)
+
+      form.values.should eq({access_token: "default-token", name: "  Default name  "})
+      ctx.request.body.try(&.gets_to_end).should eq("name=Body+value")
+    end
+
+    it "preserves defaults for transformed fields" do
+      ctx = test_handler_context
+      submitted_form = TransformedDefaultValueForm.from_www_form(ctx, URI::Params.encode({name: "  Submitted name  "}))
+      fresh_form = submitted_form.fresh
+      expected = <<-HTML.squish
+      <div class="crumble--field">
+        <label for="crumble--form-spec--transformed-default-value-form--name-field-id">Name</label>
+        <input id="crumble--form-spec--transformed-default-value-form--name-field-id" type="text" name="name" value="  DEFAULT NAME  ">
+      </div>
+      HTML
+
+      submitted_form.values.should eq({name: "Submitted name"})
+      fresh_form.ctx.should eq(ctx)
+      fresh_form.submitted?.should be_false
+      fresh_form.values.should eq({name: "  default name  "})
+      fresh_form.to_html.should eq(expected)
     end
   end
 
