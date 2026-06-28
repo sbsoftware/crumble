@@ -59,6 +59,19 @@ class Crumble::FormSpec
     end
   end
 
+  class DefaultValueForm < Crumble::Form
+    field access_token : String = default_access_token, type: :hidden
+    field name : String = "  Default name  " do
+      after_submit do |value|
+        value.strip
+      end
+    end
+
+    private def default_access_token
+      "default-token"
+    end
+  end
+
   class AllowBlankForm < Crumble::Form
     field name : String, allow_blank: false do
       after_submit do |value|
@@ -219,6 +232,38 @@ class Crumble::FormSpec
       form = TransformForm.from_www_form(ctx, URI::Params.encode({name: "  Bob ", code: "  xy "}))
 
       form.values.should eq({name: "Bob", code: "xy"})
+    end
+  end
+
+  describe "DefaultValueForm" do
+    it "renders declared defaults when values are omitted" do
+      ctx = test_handler_context
+      expected = <<-HTML.squish
+      <input id="crumble--form-spec--default-value-form--access-token-field-id" type="hidden" name="access_token" value="default-token">
+      <div class="crumble--field">
+        <label for="crumble--form-spec--default-value-form--name-field-id">Name</label>
+        <input id="crumble--form-spec--default-value-form--name-field-id" type="text" name="name" value="  Default name  ">
+      </div>
+      HTML
+
+      DefaultValueForm.new(ctx).to_html.should eq(expected)
+    end
+
+    it "lets explicit constructor values override declared defaults" do
+      ctx = test_handler_context
+      form = DefaultValueForm.new(ctx, access_token: "explicit-token", name: "Explicit name")
+
+      form.values.should eq({access_token: "explicit-token", name: "Explicit name"})
+    end
+
+    it "lets submitted values override declared defaults" do
+      ctx = test_handler_context
+      form = DefaultValueForm.from_www_form(ctx, URI::Params.encode({
+        access_token: "submitted-token",
+        name:         "Submitted name",
+      }))
+
+      form.values.should eq({access_token: "submitted-token", name: "Submitted name"})
     end
   end
 
