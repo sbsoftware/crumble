@@ -2,6 +2,8 @@ require "./test_request"
 require "./test_response"
 
 class Crumble::Server::TestRequestContext < Crumble::Server::RequestContext
+  @session_store : SessionStore
+
   def initialize(response_io = nil, session_store = nil, **request_args)
     request = TestRequest.new(**request_args)
     response = TestResponse.new(response_io)
