@@ -1,7 +1,13 @@
 require "../server/view_handler"
+require "../path_matching"
 
 abstract class Crumble::Resource
   include Crumble::Server::ViewHandler
+  include Crumble::PathMatching
+
+  def self._path_matching_root_suffix : String
+    "Resource"
+  end
 
   macro before(&blk)
     before(:index, :create, :show, :update, :destroy) {{blk}}
@@ -44,7 +50,7 @@ abstract class Crumble::Resource
 
     case ctx.request.method
     when "GET"
-      if instance.id? && instance.top_level?
+      if instance.member?
         before_action_handling(instance, :show)
         instance.show
       else
@@ -52,7 +58,7 @@ abstract class Crumble::Resource
         instance.index
       end
     when "POST"
-      if instance.id? && instance.top_level?
+      if instance.member?
         before_action_handling(instance, :update)
         instance.update
       else
@@ -66,37 +72,33 @@ abstract class Crumble::Resource
     return true
   end
 
-  def self.match(path)
-    uri_path_matcher.match(path)
-  end
-
-  def self.root_path
-    "/" + self.name.chomp("Resource").gsub("::", "/").underscore
-  end
-
-  def self.root_path(id)
-    "#{root_path}/#{id}"
-  end
-
-  def self.nested_path
-    ""
-  end
-
   def self.uri_path(id = nil)
-    path = root_path
-    if id
-      path += "/#{id}"
-      path += nested_path
-    end
-    path
+    return _root_path unless id
+    raise ArgumentError.new("Cannot build a member path for #{self} without path params") if _path_parts.empty?
+    _path_matching_uri_path(id: id)
   end
 
   def self.uri_path_matcher
-    if nested_path.empty?
-      /^#{root_path}(\/|\/(\d+))?$/
+    if path_param?
+      collection_pattern = _root_path_segment_patterns.empty? ? "/" : "/" + _root_path_segment_patterns.join("/")
+      member_pattern = "/" + (_root_path_segment_patterns + _path_parts.map(&.segment_pattern)).join("/")
+
+      if collection_pattern == "/"
+        Regex.new("^(?:/|#{member_pattern}/?)$")
+      else
+        Regex.new("^(?:#{collection_pattern}|#{member_pattern})/?$")
+      end
     else
-      /^#{root_path}(\/|\/(\d+)(#{nested_path})?)?$/
+      previous_def
     end
+  end
+
+  def self.path_param?
+    _path_parts.any? { |part| part.is_a?(Crumble::PathMatching::ParamPathPart) }
+  end
+
+  def self._root_path_segment_patterns
+    _root_path.split('/').reject(&.empty?).map { |seg| Regex.escape(seg) }
   end
 
   def initialize(@request_ctx); end
@@ -185,16 +187,12 @@ abstract class Crumble::Resource
     ctx.response.print "Not Found"
   end
 
-  def id?
-    self.class.match(ctx.request.path).try { |m| m[2]?.try(&.to_i64) }
-  end
-
-  def id
-    id?.not_nil!
+  def member?
+    path_params.size > 0
   end
 
   def nested?
-    self.class.nested_path.size > 0
+    self.class._path_parts.any? { |part| part.is_a?(Crumble::PathMatching::NestedPathPart) }
   end
 
   def top_level?

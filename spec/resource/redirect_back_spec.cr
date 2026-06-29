@@ -2,9 +2,7 @@ require "../spec_helper"
 
 module Crumble::Resource::RedirectBackSpec
   class HomeResource < Resource
-    def self.root_path
-      "/"
-    end
+    root_path "/"
   end
 
   class MyResource < Resource

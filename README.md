@@ -150,7 +150,7 @@ form.values # => {name: "...", bio: nil, slug: "..."}
 
 ### Resources
 
-`Crumble::Resource` gives you RESTful handlers with sensible defaults for `index`, `show`, `create`, `update`, and `destroy`. Routing follows the class name (`CommentsResource` → `/comments`); nested paths are supported one level deep via `self.nested_path`.
+`Crumble::Resource` gives you RESTful handlers with sensible defaults for `index`, `show`, `create`, `update`, and `destroy`. Routing follows the class name (`CommentsResource` → `/comments`); use the same `root_path`, `path_param`, and `nested_path` declarations as pages for custom Resource paths.
 
 ```crystal
 require "css"
@@ -206,6 +206,7 @@ end
 ```
 
 - `render SomeView` wraps the view in the configured layout and sets `Content-Type` to HTML.
+- Declare path params such as `path_param id` when a Resource should handle member routes; collection paths route to `index`/`create`, and full param paths route to `show`/`update`.
 - `redirect` and `redirect_back` set a `303 See Other` by default.
 - Add `before` filters to short-circuit with `false` (400) or an `Int32` status code.
 

@@ -42,9 +42,8 @@ end
 
 module Crumble::Server::RequestDispatcherResourceSpec
   class WidgetResource < Crumble::Resource
-    def self.root_path
-      "/root-handler-resource"
-    end
+    root_path "/root-handler-resource"
+    path_param id
 
     def index
       ctx.response.print "resource index"
@@ -64,9 +63,7 @@ module Crumble::Server::RequestDispatcherResourceSpec
   end
 
   class SessionResource < Crumble::Resource
-    def self.root_path
-      "/root-handler-session"
-    end
+    root_path "/root-handler-session"
 
     def index
       current = ctx.session.blah || 0

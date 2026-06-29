@@ -14,4 +14,12 @@ class Crumble::Server::SessionDecorator
 
     session_store.set(session)
   end
+
+  # Replaces the wrapped session with the latest version from the store and returns this decorator.
+  # This keeps the current session id; if the store no longer has that session, the store lookup raises.
+  def reload
+    @session = session_store[session.id]
+
+    self
+  end
 end
