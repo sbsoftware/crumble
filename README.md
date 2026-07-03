@@ -234,6 +234,8 @@ class InvitePage < Crumble::Page
 end
 ```
 
+Supported Open Graph methods include `og_title`, `og_type`, `og_url`, `og_description`, `og_determiner`, `og_locale`, `og_locale_alternate`, `og_site_name`, `og_audio`, `og_audio_secure_url`, `og_audio_type`, `og_image`, `og_image_url`, `og_image_secure_url`, `og_image_type`, `og_image_width`, `og_image_height`, `og_image_alt`, `og_video`, `og_video_secure_url`, `og_video_type`, `og_video_width`, `og_video_height`, and `og_video_alt`.
+
 ### Server & Routing
 
 - `Crumble::Server.start` boots an `HTTP::Server` with logging and optional OpenTelemetry tracing (`CRUMBLE_HOST` + `--port` flag control the bind address).
