@@ -20,11 +20,47 @@ module Crumble::Server
       nil
     end
 
+    def og_audio : String?
+      nil
+    end
+
+    def og_audio_secure_url : String?
+      nil
+    end
+
+    def og_audio_type : String?
+      nil
+    end
+
+    def og_determiner : String?
+      nil
+    end
+
     def meta_description : String?
       nil
     end
 
     def og_image : String?
+      nil
+    end
+
+    def og_image_url : String?
+      nil
+    end
+
+    def og_image_secure_url : String?
+      nil
+    end
+
+    def og_image_type : String?
+      nil
+    end
+
+    def og_image_width : String?
+      nil
+    end
+
+    def og_image_height : String?
       nil
     end
 
@@ -40,7 +76,39 @@ module Crumble::Server
       nil
     end
 
+    def og_locale : String?
+      nil
+    end
+
+    def og_locale_alternate : Array(String)?
+      nil
+    end
+
     def og_site_name : String?
+      nil
+    end
+
+    def og_video : String?
+      nil
+    end
+
+    def og_video_secure_url : String?
+      nil
+    end
+
+    def og_video_type : String?
+      nil
+    end
+
+    def og_video_width : String?
+      nil
+    end
+
+    def og_video_height : String?
+      nil
+    end
+
+    def og_video_alt : String?
       nil
     end
 
