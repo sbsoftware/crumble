@@ -1,31 +1,15 @@
 module Crumble
-  abstract class RobotsFile
-    macro inherited
-      File = TxtFile.new("/robots.txt", self.to_txt, immutable: false)
-
-      def self.uri_path
-        File.uri_path
-      end
-    end
-
+  class Robots
     macro sitemap(url)
       def self.to_txt(io : IO)
-        {% if @type.class.methods.map(&.name.stringify).includes?("to_txt") %}
-          previous_def(io)
-        {% else %}
-          super(io)
-        {% end %}
+        previous_def(io)
         write_sitemap(io, {{url}})
       end
     end
 
     macro user_agent(ua, &block)
       def self.to_txt(io : IO)
-        {% if @type.class.methods.map(&.name.stringify).includes?("to_txt") %}
-          previous_def(io)
-        {% else %}
-          super(io)
-        {% end %}
+        previous_def(io)
         write_user_agent(io, {{ua}})
 
         # Parse the nested DSL at macro expansion time so Page/Resource constants
@@ -85,29 +69,38 @@ module Crumble
     end
 
     private def self.write_allow(io : IO, path : String)
-      write_path_directive(io, "Allow", path)
+      write_path_directive(io, "Allow", path, indent: true)
     end
 
     private def self.write_disallow(io : IO, path : String)
-      write_path_directive(io, "Disallow", path)
+      write_path_directive(io, "Disallow", path, indent: true)
     end
 
     private def self.write_crawl_delay(io : IO, seconds : Int32)
-      io << "Crawl-delay: " << seconds << '\n'
+      io << "  Crawl-delay: " << seconds << '\n'
     end
 
     private def self.write_sitemap(io : IO, url : String)
       io << "Sitemap: " << url << '\n'
     end
 
-    private def self.write_path_directive(io : IO, name : String, path : String)
+    private def self.write_path_directive(io : IO, name : String, path : String, indent : Bool = false)
+      io << "  " if indent
       io << name << ": " << path << '\n'
     end
   end
 end
 
 macro robots(&blk)
-  class ::Crumble::Robots < ::Crumble::RobotsFile
+  class ::Crumble::Robots
     {{blk.body}}
+
+    File = TxtFile.new("/robots.txt", self.to_txt, immutable: false)
+
+    def self.uri_path
+      File.uri_path
+    end
   end
+
+  ::Crumble::Robots::File
 end

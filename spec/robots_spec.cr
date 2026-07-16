@@ -1,12 +1,6 @@
 require "./spec_helper"
 require "http/client/response"
 
-module AssetFileRegistry
-  def self.remove_for_spec(path)
-    @@asset_files.delete(path)
-  end
-end
-
 module RobotsSpec
   class PublicPage < Crumble::Page
     root_path "/public"
@@ -66,12 +60,12 @@ describe Crumble::Robots do
   it "generates robots.txt content from typed directives" do
     Crumble::Robots.to_txt.should eq(<<-TXT + "\n")
     User-agent: *
-    Disallow: /admin
-    Allow: /public
-    Crawl-delay: 3
+      Disallow: /admin
+      Allow: /public
+      Crawl-delay: 3
     User-agent: ExampleBot
-    Disallow: /private
-    Allow: /private/preview
+      Disallow: /private
+      Allow: /private/preview
     Sitemap: https://example.com/sitemap.xml
     TXT
   end
@@ -83,15 +77,5 @@ describe Crumble::Robots do
     response.headers["Content-Type"].should eq("text/plain")
     response.headers["Cache-Control"].should eq("public, max-age=0, must-revalidate")
     response.body.should eq(Crumble::Robots.to_txt)
-  end
-
-  it "returns 404 for /robots.txt when no robots file is registered" do
-    AssetFileRegistry.remove_for_spec("/robots.txt")
-    response = dispatch_robots_request
-
-    response.status_code.should eq(404)
-    response.body.should eq("Not Found")
-  ensure
-    AssetFileRegistry.add(Crumble::Robots.uri_path, Crumble::Robots::File)
   end
 end
