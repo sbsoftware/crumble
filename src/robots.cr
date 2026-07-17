@@ -5,7 +5,7 @@ module Crumble
         {% if @type.class.methods.map(&.name.stringify).includes?("to_txt") %}
           previous_def(io)
         {% end %}
-        write_sitemap(io, {{url}})
+        sitemap(io, {{url}})
       end
     end
 
@@ -14,7 +14,7 @@ module Crumble
         {% if @type.class.methods.map(&.name.stringify).includes?("to_txt") %}
           previous_def(io)
         {% end %}
-        write_user_agent(io, {{ua}})
+        user_agent(io, {{ua}})
 
         # Rewrite the nested DSL calls into the generated writer method while
         # keeping path resolution in regular Crystal methods for duck typing.
@@ -24,29 +24,7 @@ module Crumble
             {{exp.raise "Unsupported robots directive"}}
           {% end %}
 
-          {% if exp.name.stringify == "allow" %}
-            {% unless exp.args.size == 1 %}
-              {{exp.raise "allow expects exactly one path"}}
-            {% end %}
-            write_allow(io, {{exp.args[0]}})
-          {% elsif exp.name.stringify == "disallow" %}
-            {% unless exp.args.size == 1 %}
-              {{exp.raise "disallow expects exactly one path"}}
-            {% end %}
-            write_disallow(io, {{exp.args[0]}})
-          {% elsif exp.name.stringify == "crawl_delay" %}
-            {% unless exp.args.size == 1 %}
-              {{exp.raise "crawl_delay expects exactly one number of seconds"}}
-            {% end %}
-            write_crawl_delay(io, {{exp.args[0]}})
-          {% elsif exp.name.stringify == "sitemap" %}
-            {% unless exp.args.size == 1 %}
-              {{exp.raise "sitemap expects exactly one URL"}}
-            {% end %}
-            write_sitemap(io, {{exp.args[0]}})
-          {% else %}
-            {{exp.raise "Unsupported robots directive: #{exp.name}"}}
-          {% end %}
+          {{exp.name.id}}(io{% for arg in exp.args %}, {{arg}}{% end %})
         {% end %}
       end
     end
@@ -60,39 +38,39 @@ module Crumble
     def self.to_txt(io : IO)
     end
 
-    private def self.write_user_agent(io : IO, ua : String)
+    private def self.user_agent(io : IO, ua : String)
       io << "User-agent: " << ua << '\n'
     end
 
-    private def self.write_allow(io : IO, path : String)
-      write_path_directive(io, "Allow", path, indent: true)
+    private def self.allow(io : IO, path : String)
+      path_directive(io, "Allow", path, indent: true)
     end
 
-    private def self.write_allow(io : IO, path)
-      write_path_directive(io, "Allow", path, indent: true)
+    private def self.allow(io : IO, path)
+      path_directive(io, "Allow", path, indent: true)
     end
 
-    private def self.write_disallow(io : IO, path : String)
-      write_path_directive(io, "Disallow", path, indent: true)
+    private def self.disallow(io : IO, path : String)
+      path_directive(io, "Disallow", path, indent: true)
     end
 
-    private def self.write_disallow(io : IO, path)
-      write_path_directive(io, "Disallow", path, indent: true)
+    private def self.disallow(io : IO, path)
+      path_directive(io, "Disallow", path, indent: true)
     end
 
-    private def self.write_crawl_delay(io : IO, seconds : Int32)
+    private def self.crawl_delay(io : IO, seconds : Int32)
       io << "  Crawl-delay: " << seconds << '\n'
     end
 
-    private def self.write_sitemap(io : IO, url : String)
+    private def self.sitemap(io : IO, url : String)
       io << "Sitemap: " << url << '\n'
     end
 
-    private def self.write_path_directive(io : IO, name : String, path : String, indent : Bool = false)
+    private def self.path_directive(io : IO, name : String, path : String, indent : Bool = false)
       write_resolved_path_directive(io, name, path, indent)
     end
 
-    private def self.write_path_directive(io : IO, name : String, path, indent : Bool = false)
+    private def self.path_directive(io : IO, name : String, path, indent : Bool = false)
       write_resolved_path_directive(io, name, path.uri_path, indent)
     end
 
