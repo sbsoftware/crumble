@@ -2,18 +2,22 @@ module Crumble
   class Robots
     macro sitemap(url)
       def self.to_txt(io : IO)
-        previous_def(io)
+        {% if @type.class.methods.map(&.name.stringify).includes?("to_txt") %}
+          previous_def(io)
+        {% end %}
         write_sitemap(io, {{url}})
       end
     end
 
     macro user_agent(ua, &block)
       def self.to_txt(io : IO)
-        previous_def(io)
+        {% if @type.class.methods.map(&.name.stringify).includes?("to_txt") %}
+          previous_def(io)
+        {% end %}
         write_user_agent(io, {{ua}})
 
-        # Parse the nested DSL at macro expansion time so Page/Resource constants
-        # can be converted to their stable class-level uri_path automatically.
+        # Rewrite the nested DSL calls into the generated writer method while
+        # keeping path resolution in regular Crystal methods for duck typing.
         {% expressions = block.body.is_a?(Expressions) ? block.body.expressions : [block.body] %}
         {% for exp in expressions %}
           {% unless exp.is_a?(Call) %}
@@ -24,20 +28,12 @@ module Crumble
             {% unless exp.args.size == 1 %}
               {{exp.raise "allow expects exactly one path"}}
             {% end %}
-            {% if exp.args[0].is_a?(Path) && (exp.args[0].resolve < ::Crumble::Page || exp.args[0].resolve < ::Crumble::Resource) %}
-              write_allow(io, {{exp.args[0]}}.uri_path)
-            {% else %}
-              write_allow(io, {{exp.args[0]}})
-            {% end %}
+            write_allow(io, {{exp.args[0]}})
           {% elsif exp.name.stringify == "disallow" %}
             {% unless exp.args.size == 1 %}
               {{exp.raise "disallow expects exactly one path"}}
             {% end %}
-            {% if exp.args[0].is_a?(Path) && (exp.args[0].resolve < ::Crumble::Page || exp.args[0].resolve < ::Crumble::Resource) %}
-              write_disallow(io, {{exp.args[0]}}.uri_path)
-            {% else %}
-              write_disallow(io, {{exp.args[0]}})
-            {% end %}
+            write_disallow(io, {{exp.args[0]}})
           {% elsif exp.name.stringify == "crawl_delay" %}
             {% unless exp.args.size == 1 %}
               {{exp.raise "crawl_delay expects exactly one number of seconds"}}
@@ -72,7 +68,15 @@ module Crumble
       write_path_directive(io, "Allow", path, indent: true)
     end
 
+    private def self.write_allow(io : IO, path)
+      write_path_directive(io, "Allow", path, indent: true)
+    end
+
     private def self.write_disallow(io : IO, path : String)
+      write_path_directive(io, "Disallow", path, indent: true)
+    end
+
+    private def self.write_disallow(io : IO, path)
       write_path_directive(io, "Disallow", path, indent: true)
     end
 
@@ -85,6 +89,14 @@ module Crumble
     end
 
     private def self.write_path_directive(io : IO, name : String, path : String, indent : Bool = false)
+      write_resolved_path_directive(io, name, path, indent)
+    end
+
+    private def self.write_path_directive(io : IO, name : String, path, indent : Bool = false)
+      write_resolved_path_directive(io, name, path.uri_path, indent)
+    end
+
+    private def self.write_resolved_path_directive(io : IO, name : String, path : String, indent : Bool)
       io << "  " if indent
       io << name << ": " << path << '\n'
     end
