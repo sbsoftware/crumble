@@ -7,7 +7,9 @@ describe Crumble::Server::RequestContext do
       request_context = Crumble::Server::TestRequestContext.new(session_store: store)
 
       cookie = request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
-      store.has_key?(Crumble::Server::SessionKey.new(UUID.new(cookie.value))).should be_false
+      session_id = Crumble::Server::SessionKey.new(UUID.new(cookie.value))
+      request_context.session_id.should eq(session_id)
+      store.has_key?(session_id).should be_false
     end
 
     it "replaces an invalid session cookie without storing a session" do

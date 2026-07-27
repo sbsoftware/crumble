@@ -5,8 +5,8 @@ class Crumble::Server::RequestContext
   SESSION_COOKIE_NAME = "_crumble_session"
 
   @@session_store : SessionStore?
-  @session_key : SessionKey?
 
+  getter session_id : SessionKey?
   getter original_context : HTTP::Server::Context
 
   delegate request, response, to: original_context
@@ -52,7 +52,7 @@ class Crumble::Server::RequestContext
   end
 
   private def ensure_session_key : SessionKey
-    if session_key = @session_key
+    if session_key = @session_id
       return session_key
     end
 
@@ -67,7 +67,7 @@ class Crumble::Server::RequestContext
                     set_new_session_key_cookie
                   end
 
-    @session_key = session_key
+    @session_id = session_key
     session_key
   end
 
