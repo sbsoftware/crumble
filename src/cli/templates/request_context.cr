@@ -15,6 +15,20 @@ module Crumble
       #   365.days
       # end
 
+      # def session_cookie_http_only
+      #   true
+      # end
+
+      # def session_cookie_same_site
+      #   :lax
+      # end
+
+      # Release builds default this to true. Override in development if you need
+      # cookies to be set over plain HTTP.
+      # def session_cookie_secure
+      #   false
+      # end
+
       # Add any methods you want to access on the `ctx` object in resources or views
     end
   end
