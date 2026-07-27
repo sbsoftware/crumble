@@ -5,8 +5,11 @@ class Crumble::Server::RequestContext
   SESSION_COOKIE_NAME = "_crumble_session"
 
   @@session_store : SessionStore?
+  @session_id : SessionKey?
 
-  getter session_id : SessionKey?
+  getter session_id : SessionKey do
+    ensure_session_key
+  end
   getter original_context : HTTP::Server::Context
 
   delegate request, response, to: original_context
