@@ -51,25 +51,29 @@ class Crumble::Server::RequestContext
     end
   end
 
-  private def ensure_session_key
-    return @session_key.not_nil! if @session_key
-
-    if request.cookies.has_key?(SESSION_COOKIE_NAME)
-      begin
-        @session_key = SessionKey.new(UUID.new(request.cookies[SESSION_COOKIE_NAME].value))
-      rescue ArgumentError
-        # Bad client cookies should not break requests that never touch sessions.
-        set_new_session_key_cookie
-      end
-    else
-      set_new_session_key_cookie
+  private def ensure_session_key : SessionKey
+    if session_key = @session_key
+      return session_key
     end
 
-    @session_key.not_nil!
+    session_key = if cookie = request.cookies[SESSION_COOKIE_NAME]?
+                    if uuid = UUID.parse?(cookie.value)
+                      SessionKey.new(uuid)
+                    else
+                      # Bad client cookies should not break requests that never touch sessions.
+                      set_new_session_key_cookie
+                    end
+                  else
+                    set_new_session_key_cookie
+                  end
+
+    @session_key = session_key
+    session_key
   end
 
-  private def set_new_session_key_cookie
-    @session_key = SessionKey.generate
-    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: @session_key.not_nil!.to_s, path: "/", max_age: session_cookie_max_age)
+  private def set_new_session_key_cookie : SessionKey
+    session_key = SessionKey.generate
+    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: session_key.to_s, path: "/", max_age: session_cookie_max_age)
+    session_key
   end
 end
