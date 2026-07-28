@@ -1,5 +1,19 @@
 require "../spec_helper"
 
+private class CustomSessionCookieRequestContext < Crumble::Server::TestRequestContext
+  def session_cookie_http_only
+    false
+  end
+
+  def session_cookie_same_site
+    :strict
+  end
+
+  def session_cookie_secure
+    true
+  end
+end
+
 describe Crumble::Server::RequestContext do
   describe "#initialize" do
     it "sets a session cookie without storing a session when the request has no session cookie" do
@@ -21,6 +35,28 @@ describe Crumble::Server::RequestContext do
 
       cookie = original_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
       cookie.value.should_not eq("not-a-uuid")
+    end
+
+    it "sets default security flags on new session cookies" do
+      request_context = Crumble::Server::TestRequestContext.new
+      cookie = request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
+
+      cookie.http_only.should be_true
+      cookie.samesite.should eq(HTTP::Cookie::SameSite::Lax)
+      {% if flag?(:release) %}
+        cookie.secure.should be_true
+      {% else %}
+        cookie.secure.should be_false
+      {% end %}
+    end
+
+    it "allows session cookie security flags to be overridden" do
+      request_context = CustomSessionCookieRequestContext.new
+      cookie = request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
+
+      cookie.http_only.should be_false
+      cookie.samesite.should eq(HTTP::Cookie::SameSite::Strict)
+      cookie.secure.should be_true
     end
   end
 

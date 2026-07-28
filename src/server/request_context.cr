@@ -43,6 +43,25 @@ class Crumble::Server::RequestContext
     nil
   end
 
+  # Override this method to allow JavaScript access to the session cookie
+  def session_cookie_http_only
+    true
+  end
+
+  # Override this method to change the session cookie SameSite policy
+  def session_cookie_same_site
+    :lax
+  end
+
+  # Override this method to allow session cookies over plain HTTP
+  def session_cookie_secure
+    {% if flag?(:release) %}
+      true
+    {% else %}
+      false
+    {% end %}
+  end
+
   private def load_session
     key = ensure_session_key
     if session_store.has_key?(key)
@@ -74,9 +93,31 @@ class Crumble::Server::RequestContext
     session_key
   end
 
+  private def session_cookie_samesite
+    case same_site = session_cookie_same_site
+    when nil
+      nil
+    when HTTP::Cookie::SameSite
+      same_site
+    when Symbol
+      case same_site
+      when :lax
+        HTTP::Cookie::SameSite::Lax
+      when :strict
+        HTTP::Cookie::SameSite::Strict
+      when :none
+        HTTP::Cookie::SameSite::None
+      else
+        raise ArgumentError.new("Unsupported session cookie SameSite value: #{same_site.inspect}")
+      end
+    else
+      raise ArgumentError.new("Unsupported session cookie SameSite value: #{same_site.inspect}")
+    end
+  end
+
   private def set_new_session_key_cookie : SessionKey
     session_key = SessionKey.generate
-    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: session_key.to_s, path: "/", max_age: session_cookie_max_age)
+    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: session_key.to_s, path: "/", max_age: session_cookie_max_age, http_only: session_cookie_http_only, samesite: session_cookie_samesite, secure: session_cookie_secure)
     session_key
   end
 end
