@@ -31,8 +31,44 @@ module ToHtml
           meta property: "og:description", content: description
         end
 
+        if audio = handler.og_audio
+          meta property: "og:audio", content: audio
+        end
+
+        if audio_secure_url = handler.og_audio_secure_url
+          meta property: "og:audio:secure_url", content: audio_secure_url
+        end
+
+        if audio_type = handler.og_audio_type
+          meta property: "og:audio:type", content: audio_type
+        end
+
+        if determiner = handler.og_determiner
+          meta property: "og:determiner", content: determiner
+        end
+
         if image = handler.og_image
           meta property: "og:image", content: image
+        end
+
+        if image_url = handler.og_image_url
+          meta property: "og:image:url", content: image_url
+        end
+
+        if image_secure_url = handler.og_image_secure_url
+          meta property: "og:image:secure_url", content: image_secure_url
+        end
+
+        if image_type = handler.og_image_type
+          meta property: "og:image:type", content: image_type
+        end
+
+        if image_width = handler.og_image_width
+          meta property: "og:image:width", content: image_width
+        end
+
+        if image_height = handler.og_image_height
+          meta property: "og:image:height", content: image_height
         end
 
         if image_alt = handler.og_image_alt
@@ -47,8 +83,42 @@ module ToHtml
           meta property: "og:type", content: type
         end
 
+        if locale = handler.og_locale
+          meta property: "og:locale", content: locale
+        end
+
+        if locale_alternate = handler.og_locale_alternate
+          locale_alternate.each do |locale|
+            meta property: "og:locale:alternate", content: locale
+          end
+        end
+
         if site_name = handler.og_site_name
           meta property: "og:site_name", content: site_name
+        end
+
+        if video = handler.og_video
+          meta property: "og:video", content: video
+        end
+
+        if video_secure_url = handler.og_video_secure_url
+          meta property: "og:video:secure_url", content: video_secure_url
+        end
+
+        if video_type = handler.og_video_type
+          meta property: "og:video:type", content: video_type
+        end
+
+        if video_width = handler.og_video_width
+          meta property: "og:video:width", content: video_width
+        end
+
+        if video_height = handler.og_video_height
+          meta property: "og:video:height", content: video_height
+        end
+
+        if video_alt = handler.og_video_alt
+          meta property: "og:video:alt", content: video_alt
         end
 
         if card = handler.twitter_card

@@ -9,6 +9,7 @@ class Crumble::Server::TestRequestContext < Crumble::Server::RequestContext
     response = TestResponse.new(response_io)
     @original_context = HTTP::Server::Context.new(request, response)
     @session_store = session_store || MemorySessionStore.new
+    ensure_session_key
   end
 
   def session_store
