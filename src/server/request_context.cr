@@ -37,10 +37,24 @@ class Crumble::Server::RequestContext
     @session ||= SessionDecorator.new(session_store, load_session)
   end
 
+  # Returns whether the current session ID is already present without loading or creating a session.
+  def stored_session? : Bool
+    session_store.has_key?(session_id)
+  end
+
   # Override this method to change the session cookie lifetime
-  # TODO: Think about how to properly test this
   def session_cookie_max_age
     nil
+  end
+
+  # Override this method to change the lifetime of newly issued session cookies only
+  def new_session_cookie_max_age
+    session_cookie_max_age
+  end
+
+  # Reissue the current session cookie, retaining its ID and configured attributes
+  def refresh_session_cookie(max_age = session_cookie_max_age) : Nil
+    write_session_cookie(session_id, max_age)
   end
 
   # Override this method to allow JavaScript access to the session cookie
@@ -64,7 +78,7 @@ class Crumble::Server::RequestContext
 
   private def load_session
     key = ensure_session_key
-    if session_store.has_key?(key)
+    if stored_session?
       session_store[key]
     else
       session = Session.new(key)
@@ -117,7 +131,11 @@ class Crumble::Server::RequestContext
 
   private def set_new_session_key_cookie : SessionKey
     session_key = SessionKey.generate
-    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: session_key.to_s, path: "/", max_age: session_cookie_max_age, http_only: session_cookie_http_only, samesite: session_cookie_samesite, secure: session_cookie_secure)
+    write_session_cookie(session_key, new_session_cookie_max_age)
     session_key
+  end
+
+  private def write_session_cookie(session_key, max_age) : Nil
+    response.cookies << HTTP::Cookie.new(name: SESSION_COOKIE_NAME, value: session_key.to_s, path: "/", max_age: max_age, http_only: session_cookie_http_only, samesite: session_cookie_samesite, secure: session_cookie_secure)
   end
 end
