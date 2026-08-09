@@ -1,6 +1,10 @@
 require "../spec_helper"
 
 private class CustomSessionCookieRequestContext < Crumble::Server::TestRequestContext
+  def session_cookie_max_age
+    2.hours
+  end
+
   def session_cookie_http_only
     false
   end
@@ -11,6 +15,22 @@ private class CustomSessionCookieRequestContext < Crumble::Server::TestRequestCo
 
   def session_cookie_secure
     true
+  end
+end
+
+private class BrowserScopedNewSessionCookieRequestContext < CustomSessionCookieRequestContext
+  def new_session_cookie_max_age
+    nil
+  end
+end
+
+private class BrowserScopedReplacementCookieRequestContext < Crumble::Server::RequestContext
+  def session_cookie_max_age
+    2.hours
+  end
+
+  def new_session_cookie_max_age
+    nil
   end
 end
 
@@ -57,6 +77,69 @@ describe Crumble::Server::RequestContext do
       cookie.http_only.should be_false
       cookie.samesite.should eq(HTTP::Cookie::SameSite::Strict)
       cookie.secure.should be_true
+    end
+
+    it "uses the configured session lifetime for new cookies by default" do
+      request_context = CustomSessionCookieRequestContext.new
+
+      request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].max_age.should eq(2.hours)
+    end
+
+    it "allows only new and replacement cookie lifetimes to be overridden" do
+      request_context = BrowserScopedNewSessionCookieRequestContext.new
+
+      request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].max_age.should be_nil
+
+      original_request = HTTP::Request.new("GET", "/dummy", nil, nil)
+      original_request.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME] = "not-a-uuid"
+      original_response = HTTP::Server::Response.new(IO::Memory.new)
+      context = HTTP::Server::Context.new(original_request, original_response)
+      BrowserScopedReplacementCookieRequestContext.new(context)
+
+      original_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].max_age.should be_nil
+    end
+  end
+
+  describe "#stored_session?" do
+    it "returns false without storing or caching a newly generated session" do
+      store = Crumble::Server::MemorySessionStore.new
+      request_context = Crumble::Server::TestRequestContext.new(session_store: store)
+
+      request_context.stored_session?.should be_false
+      store.has_key?(request_context.session_id).should be_false
+    end
+
+    it "returns true when the current session ID exists in the store" do
+      store = Crumble::Server::MemorySessionStore.new
+      request_context = Crumble::Server::TestRequestContext.new(session_store: store)
+      store.set(Crumble::Server::Session.new(request_context.session_id))
+
+      request_context.stored_session?.should be_true
+    end
+  end
+
+  describe "#refresh_session_cookie" do
+    it "reissues the same ID with the configured lifetime and attributes" do
+      request_context = BrowserScopedNewSessionCookieRequestContext.new
+      session_id = request_context.session_id
+
+      request_context.refresh_session_cookie
+      cookie = request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
+
+      cookie.value.should eq(session_id.to_s)
+      cookie.path.should eq("/")
+      cookie.max_age.should eq(2.hours)
+      cookie.http_only.should be_false
+      cookie.samesite.should eq(HTTP::Cookie::SameSite::Strict)
+      cookie.secure.should be_true
+    end
+
+    it "accepts an explicit lifetime" do
+      request_context = BrowserScopedNewSessionCookieRequestContext.new
+
+      request_context.refresh_session_cookie(30.minutes)
+
+      request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].max_age.should eq(30.minutes)
     end
   end
 
