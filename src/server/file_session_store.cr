@@ -1,4 +1,5 @@
 require "./session_store"
+require "file_utils"
 
 class Crumble::Server::FileSessionStore
   include SessionStore
@@ -7,6 +8,7 @@ class Crumble::Server::FileSessionStore
 
   def initialize(folder : String)
     @folder = Path.new(folder).normalize.to_native
+    FileUtils.mkdir_p(@folder)
   end
 
   def has_key?(key : SessionKey) : Bool
