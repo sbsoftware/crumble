@@ -157,6 +157,18 @@ class Crumble::FormSpec
     field bio : String?, type: :textarea
   end
 
+  class UploadForm < Crumble::Form
+    field title : String do
+      after_submit do |value|
+        value.strip
+      end
+    end
+
+    field tags : Array(String)
+    field attachment : Crumble::UploadedFile?, type: :file, max_size: 5_i64, attrs: {accept: "text/plain", capture: "environment"}
+    field documents : Array(Crumble::UploadedFile), type: :file, attrs: {multiple: true}
+  end
+
   describe "DefaultForm#to_html" do
     it "should return the correct HTML" do
       ctx = test_handler_context
@@ -211,6 +223,106 @@ class Crumble::FormSpec
   describe "EmptyForm#to_html" do
     it "should return an empty string" do
       EmptyForm.new(test_handler_context).to_html.should eq("")
+    end
+  end
+
+  describe ".from_request" do
+    it "keeps URL-encoded parsing behavior" do
+      ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded; charset=UTF-8"}, body: "name=++Bob++&code=+xy+")
+      form = TransformForm.from_request(ctx)
+
+      form.name.should eq("Bob")
+      form.code.should eq("xy")
+    end
+
+    it "streams multipart text and file fields with metadata" do
+      body = multipart_body([
+        {"title", nil, nil, "  Report  "},
+        {"tags", nil, nil, "one"},
+        {"tags", nil, nil, "two"},
+        {"attachment", "../unsafe/notes.txt", "text/plain", "hello"},
+        {"documents", "one.txt", "text/plain", "one"},
+        {"documents", "two.txt", "text/plain", "two"},
+      ])
+      ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=crumble-boundary"}, body: body)
+      form = UploadForm.from_request(ctx)
+
+      form.title.should eq("Report")
+      form.tags.should eq(["one", "two"])
+      upload = form.attachment.not_nil!
+      upload.filename.should eq("notes.txt")
+      upload.content_type.should eq("text/plain")
+      upload.headers["Content-Disposition"].should contain("unsafe")
+      upload.size.should eq(5)
+      upload.open(&.gets_to_end).should eq("hello")
+      form.documents.not_nil!.map(&.filename).should eq(["one.txt", "two.txt"])
+      form.documents.not_nil!.map { |file| file.open(&.gets_to_end) }.should eq(["one", "two"])
+    ensure
+      ctx.try &.cleanup_temporary_uploads
+    end
+
+    it "treats an empty filename as no upload" do
+      body = multipart_body([{"title", nil, nil, "Test"}, {"attachment", "", "application/octet-stream", ""}])
+      ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=crumble-boundary"}, body: body)
+      form = UploadForm.from_request(ctx)
+
+      form.attachment.should be_nil
+    end
+
+    it "attaches size failures to the file field without retaining partial data" do
+      body = multipart_body([{"title", nil, nil, "Test"}, {"attachment", "large.txt", "text/plain", "123456"}])
+      ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=crumble-boundary"}, body: body)
+      form = UploadForm.from_request(ctx)
+
+      form.valid?.should be_false
+      form.attachment.should be_nil
+      form.error_entries.should eq([{:attachment, "attachment exceeds the maximum upload size of 5 bytes"}])
+    ensure
+      ctx.try &.cleanup_temporary_uploads
+    end
+
+    it "reports malformed and unsupported payloads as form errors" do
+      malformed_ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=missing"}, body: "not multipart")
+      malformed = UploadForm.from_request(malformed_ctx)
+      malformed.valid?.should be_false
+      malformed.error_entries.not_nil!.first[0].should eq(:_base)
+
+      unsupported_ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "application/json"}, body: "{}")
+      unsupported = UploadForm.from_request(unsupported_ctx)
+      unsupported.valid?.should be_false
+      unsupported.errors.should eq(["Unsupported form Content-Type"])
+    end
+
+    it "removes request-owned files during cleanup" do
+      body = multipart_body([{"title", nil, nil, "Test"}, {"attachment", "file.txt", "text/plain", "hello"}])
+      ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=crumble-boundary"}, body: body)
+      upload = UploadForm.from_request(ctx).attachment.not_nil!
+      File.exists?(upload.path).should be_true
+
+      ctx.cleanup_temporary_uploads
+      File.exists?(upload.path).should be_false
+    end
+  end
+
+  describe "file field rendering" do
+    it "renders attributes without a value and exposes the form enctype" do
+      html = UploadForm.new(test_handler_context).to_html
+      html.should contain(%(<input id="crumble--form-spec--upload-form--attachment-field-id" accept="text/plain" capture="environment" type="file" name="attachment">))
+      html.should_not match(/type="file"[^>]*value=/)
+      UploadForm.new(test_handler_context).enctype.should eq("multipart/form-data")
+      DefaultForm.new(test_handler_context).enctype.should be_nil
+    end
+  end
+
+  private def self.multipart_body(parts)
+    String.build do |body|
+      parts.each do |name, filename, content_type, contents|
+        body << "--crumble-boundary\r\nContent-Disposition: form-data; name=\"" << name << '"'
+        body << "; filename=\"" << filename << '"' unless filename.nil?
+        body << "\r\nContent-Type: " << content_type unless content_type.nil?
+        body << "\r\n\r\n" << contents << "\r\n"
+      end
+      body << "--crumble-boundary--\r\n"
     end
   end
 

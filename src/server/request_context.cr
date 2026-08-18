@@ -6,6 +6,7 @@ class Crumble::Server::RequestContext
 
   @@session_store : SessionStore?
   @session_id : SessionKey?
+  @temporary_upload_paths : Array(String)?
 
   getter session_id : SessionKey do
     ensure_session_key
@@ -35,6 +36,25 @@ class Crumble::Server::RequestContext
 
   def session
     @session ||= SessionDecorator.new(session_store, load_session)
+  end
+
+  # Registers framework-owned request storage. Application code should use
+  # `UploadedFile#open`; this hook exists for multipart parsing internals.
+  def register_temporary_upload(path : String) : Nil
+    (@temporary_upload_paths ||= [] of String) << path
+  end
+
+  # Removes all framework-owned uploads. RequestDispatcher calls this in an
+  # ensure block so action, validation, and parsing failures share the same cleanup.
+  def cleanup_temporary_uploads : Nil
+    @temporary_upload_paths.try &.each do |path|
+      begin
+        File.delete(path)
+      rescue File::Error
+        # The application may have moved the upload, or cleanup may run twice.
+      end
+    end
+    @temporary_upload_paths = nil
   end
 
   # Returns whether the current session ID is already present without loading or creating a session.
