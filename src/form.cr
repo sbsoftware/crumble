@@ -1,5 +1,7 @@
 require "uri"
 require "uri/params/from_www_form"
+require "http/formdata"
+require "./uploaded_file"
 
 module Crumble
   # Generic class for form field wrappers. Defined as a css_class so it can be
@@ -9,6 +11,8 @@ module Crumble
   css_class FieldErrors
 
   abstract class Form
+    class ParseError < Exception; end
+
     annotation Field; end
     annotation Nilable; end
 
@@ -67,7 +71,11 @@ module Crumble
     def self.from_www_form(ctx : Crumble::Server::HandlerContext, params : ::URI::Params) : self
       {% begin %}
         {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
-          %field{ivar.name} = {{ivar.type}}.from_www_form(params, {{ivar.name.stringify}})
+          {% if ivar.annotation(Field)[:type] == :file %}
+            %field{ivar.name} = nil
+          {% else %}
+            %field{ivar.name} = {{ivar.type}}.from_www_form(params, {{ivar.name.stringify}})
+          {% end %}
         {% end %}
 
         new(ctx, true,
@@ -76,6 +84,94 @@ module Crumble
           {% end %}
         )
       {% end %}
+    end
+
+    # Parses the request body according to Content-Type. Multipart file bodies
+    # are streamed to request-owned temporary files instead of being buffered.
+    def self.from_request(ctx : Crumble::Server::HandlerContext) : self
+      content_type = ctx.request.headers["Content-Type"]?.try(&.downcase)
+      if content_type.try(&.starts_with?("application/x-www-form-urlencoded"))
+        return from_www_form(ctx, ctx.request.body.try(&.gets_to_end) || "")
+      end
+      unless content_type.try(&.starts_with?("multipart/form-data"))
+        raise ParseError.new("Unsupported form Content-Type: #{content_type || "missing"}")
+      end
+
+      params = ::URI::Params.new
+      uploads = Hash(String, Array(Crumble::UploadedFile)).new { |hash, key| hash[key] = [] of Crumble::UploadedFile }
+      upload_errors = [] of Tuple(Symbol, String)
+      begin
+        ::HTTP::FormData.parse(ctx.request) do |part|
+          if filename = part.filename
+            next if filename.empty?
+            __accept_upload(ctx, part, uploads, upload_errors)
+          else
+            params.add(part.name, part.body.gets_to_end)
+          end
+        end
+      rescue ex : ::HTTP::FormData::Error
+        raise ParseError.new("Malformed multipart form data: #{ex.message}", cause: ex)
+      end
+
+      {% begin %}
+        {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+          {% ann = ivar.annotation(Field) %}
+          {% if ann[:type] == :file %}
+            %field{ivar.name} = {{ivar.type}}.from_multipart(uploads[{{ivar.name.stringify}}]?)
+          {% else %}
+            %field{ivar.name} = {{ivar.type}}.from_www_form(params, {{ivar.name.stringify}})
+          {% end %}
+        {% end %}
+        %form = new(ctx, true,
+          {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+            {{ivar.name.id}}: %field{ivar.name},
+          {% end %}
+        )
+        upload_errors.each { |error| %form.__add_error(error[0], error[1]) }
+        %form
+      {% end %}
+    end
+
+    private def self.__accept_upload(ctx, part, uploads, upload_errors) : Nil
+      {% begin %}
+        case part.name
+        {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+          {% ann = ivar.annotation(Field) %}
+          {% if ann[:type] == :file %}
+            when {{ivar.name.stringify}}
+              __store_upload(ctx, part, uploads, upload_errors, :{{ivar.name.id}}, {{ann.named_args[:max_size]}})
+          {% end %}
+        {% end %}
+        else
+          part.body.skip_to_end
+        end
+      {% end %}
+    end
+
+    private def self.__store_upload(ctx, part, uploads, upload_errors, field : Symbol, max_size) : Nil
+      tempfile = File.tempfile("crumble-upload")
+      size = 0_i64
+      exceeded = false
+      buffer = Bytes.new(16 * 1024)
+      begin
+        while (read = part.body.read(buffer)) > 0
+          size += read
+          if max_size && size > max_size
+            exceeded = true
+          elsif !exceeded
+            tempfile.write(buffer[0, read])
+          end
+        end
+      ensure
+        tempfile.close
+      end
+      if exceeded
+        File.delete?(tempfile.path)
+        upload_errors << {field, "is larger than the allowed #{max_size} bytes"}
+      else
+        ctx.register_temporary_file(tempfile.path)
+        uploads[part.name] << Crumble::UploadedFile.new(part.filename.not_nil!, part.headers["Content-Type"]?, part.headers, size, tempfile.path)
+      end
     end
 
     macro validation(&block)
@@ -101,7 +197,7 @@ module Crumble
       end
     end
 
-    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, allow_blank = true, options = nil, &block)
+    macro field(type_decl, *, type = nil, label = :__crumble_default__, attrs = nil, allow_blank = true, options = nil, max_size = nil, &block)
       {% before_render_block = nil %}
       {% after_submit_block = nil %}
       {% validation_blocks = [] of ASTNode %}
@@ -247,6 +343,7 @@ module Crumble
         label: {{label}},
         attrs: {% if field_attr_nodes.empty? %}[] of Nil{% else %}[{{field_attr_nodes.splat}}]{% end %},
         options: {{options}},
+        max_size: {{max_size}},
       )]
       {% if field_type.resolve.nilable? %}
         @[Nilable]
@@ -255,6 +352,16 @@ module Crumble
       getter {{field_name}} : {{field_type}}?
 
       css_id {{field_name.id.stringify.camelcase.id}}FieldId
+    end
+
+    # Returns the encoding callers should put on their outer form tag.
+    def enctype : String?
+      {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
+        {% if ivar.annotation(Field)[:type] == :file %}
+          return "multipart/form-data"
+        {% end %}
+      {% end %}
+      nil
     end
 
     # Returns the label caption for a field when no explicit `label:` was passed
@@ -298,7 +405,7 @@ module Crumble
       @validation_error_target = previous_field
     end
 
-    private def __add_error(field : Symbol, message : String)
+    protected def __add_error(field : Symbol, message : String)
       if errors = @errors
         errors << {field, message}
       else
@@ -421,6 +528,8 @@ module Crumble
                 name: {{ivar.name.stringify}} do
                 __apply_before_render_{{ivar.name.id}}({{ivar.name.id}}).to_s
               end
+            {% elsif control_type == :file %}
+              input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %}, type: :file, name: {{ivar.name.stringify}}
             {% else %}
               input {{@type}}::{{ivar.name.stringify.camelcase.id}}FieldId{% if attrs.size > 0 %}, {{attrs.splat}}{% end %},
                 type: {{control_type}},

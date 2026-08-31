@@ -40,5 +40,7 @@ class Crumble::Server::RequestDispatcher
 
     ctx.response.print "Not Found"
     ctx.response.status_code = 404
+  ensure
+    ctx.try &.cleanup_temporary_files
   end
 end
