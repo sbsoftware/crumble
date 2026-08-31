@@ -9,4 +9,5 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
   set +a
 fi
 
+cd "$SCRIPT_DIR" || exit 1
 exec "$SCRIPT_DIR/lib/crumble/src/watch.sh" "__CRUMBLE_NAME__" "__CRUMBLE_PORT__"
