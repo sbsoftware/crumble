@@ -40,5 +40,9 @@ class Crumble::Server::RequestDispatcher
 
     ctx.response.print "Not Found"
     ctx.response.status_code = 404
+  ensure
+    # File.tempfile closes files but leaves removal to the caller. Dispatch is
+    # the upload lifetime boundary, including early returns and exceptions.
+    ctx.try &.cleanup_temporary_files
   end
 end
