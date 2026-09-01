@@ -6,6 +6,7 @@ class Crumble::Server::RequestContext
 
   @@session_store : SessionStore?
   @session_id : SessionKey?
+  @temporary_files : Array(String)?
 
   getter session_id : SessionKey do
     ensure_session_key
@@ -13,6 +14,18 @@ class Crumble::Server::RequestContext
   getter original_context : HTTP::Server::Context
 
   delegate request, response, to: original_context
+
+  # Registers framework-owned request storage for removal after dispatch.
+  def register_temporary_file(path : String) : Nil
+    (@temporary_files ||= [] of String) << path
+  end
+
+  # Removes all framework-owned request storage. RequestDispatcher calls this
+  # from an ensure block, including when application code raises.
+  def cleanup_temporary_files : Nil
+    @temporary_files.try &.each { |path| File.delete?(path) }
+    @temporary_files = nil
+  end
 
   def initialize(@original_context)
     ensure_session_key
