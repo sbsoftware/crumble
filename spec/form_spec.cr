@@ -69,6 +69,15 @@ class Crumble::FormSpec
     end
   end
 
+  class ContextForm < Crumble::Form
+    getter parent : String
+    field name : String
+
+    def initialize(ctx : Crumble::Server::HandlerContext, submitted : Bool, @parent : String, **values)
+      super(ctx, submitted, **values)
+    end
+  end
+
   class DefaultValueForm < Crumble::Form
     field access_token : String = default_access_token, type: :hidden
     field name : String = "  Default name  " do
@@ -482,6 +491,15 @@ class Crumble::FormSpec
   end
 
   describe ".from_request" do
+    it "forwards extra positional arguments to the form initializer" do
+      ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}, body: "name=Bob")
+      form = ContextForm.from_request(ctx, "parent-record")
+
+      form.name.should eq("Bob")
+      form.parent.should eq("parent-record")
+      form.submitted?.should be_true
+    end
+
     it "retains url-encoded behavior" do
       ctx = test_handler_context(method: "POST", headers: HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}, body: "name=+Bob+")
       TransformForm.from_request(ctx).name.should eq("Bob")

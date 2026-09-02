@@ -64,11 +64,11 @@ module Crumble
       self.class.new(ctx)
     end
 
-    def self.from_www_form(ctx : Crumble::Server::HandlerContext, www_form : ::String) : self
-      from_www_form(ctx, ::URI::Params.parse(www_form))
+    def self.from_www_form(ctx : Crumble::Server::HandlerContext, www_form : ::String, *args) : self
+      from_www_form(ctx, ::URI::Params.parse(www_form), *args)
     end
 
-    def self.from_www_form(ctx : Crumble::Server::HandlerContext, params : ::URI::Params) : self
+    def self.from_www_form(ctx : Crumble::Server::HandlerContext, params : ::URI::Params, *args) : self
       {% begin %}
         {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
           {% if ivar.annotation(Field)[:type] == :file %}
@@ -78,7 +78,7 @@ module Crumble
           {% end %}
         {% end %}
 
-        new(ctx, true,
+        new(ctx, true, *args,
           {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
             {{ivar.name.id}}: %field{ivar.name},
           {% end %}
@@ -88,10 +88,10 @@ module Crumble
 
     # Parses the request body according to Content-Type. Multipart file bodies
     # are streamed to request-owned temporary files instead of being buffered.
-    def self.from_request(ctx : Crumble::Server::HandlerContext) : self
+    def self.from_request(ctx : Crumble::Server::HandlerContext, *args) : self
       content_type = ctx.request.headers["Content-Type"]?.try(&.downcase)
       if content_type.try(&.starts_with?("application/x-www-form-urlencoded"))
-        return from_www_form(ctx, ctx.request.body.try(&.gets_to_end) || "")
+        return from_www_form(ctx, ctx.request.body.try(&.gets_to_end) || "", *args)
       end
       unless content_type.try(&.starts_with?("multipart/form-data"))
         raise ParseError.new("Unsupported form Content-Type: #{content_type || "missing"}")
@@ -122,7 +122,7 @@ module Crumble
             %field{ivar.name} = {{ivar.type}}.from_www_form(params, {{ivar.name.stringify}})
           {% end %}
         {% end %}
-        %form = new(ctx, true,
+        %form = new(ctx, true, *args,
           {% for ivar in @type.instance_vars.select { |iv| iv.annotation(Field) } %}
             {{ivar.name.id}}: %field{ivar.name},
           {% end %}
