@@ -1,0 +1,12 @@
+#!/bin/sh
+# Works both in-repo (bin/ next to src/) and copied into a consumer
+# (bin/ next to lib/crumble/) by `shards install` (executables).
+SHARD_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+
+if [ -f "$SHARD_DIR/src/cli.cr" ]; then
+  # running from the crumble checkout itself
+  exec crystal run "$SHARD_DIR/src/cli.cr" -- "$@"
+else
+  # installed as a dependency: src lives under lib/crumble
+  exec crystal run "$SHARD_DIR/lib/crumble/src/cli.cr" -- "$@"
+fi
