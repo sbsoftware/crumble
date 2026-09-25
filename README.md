@@ -21,7 +21,7 @@ shards install
 
 ## Usage
 
-The `./lib/crumble/bin/crumble` executable generates a starter layout. A minimal server looks like:
+The `bin/crumble` executable generates a starter layout. A minimal server looks like:
 
 ```crystal
 require "crumble"
