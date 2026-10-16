@@ -85,6 +85,20 @@ describe Crumble::Server::RequestContext do
       request_context.response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].max_age.should eq(2.hours)
     end
 
+    it "reissues an existing session cookie with the configured lifetime" do
+      session_id = Crumble::Server::SessionKey.generate
+      original_request = HTTP::Request.new("GET", "/dummy", nil, nil)
+      original_request.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME] = session_id.to_s
+      original_response = HTTP::Server::Response.new(IO::Memory.new)
+      original_context = HTTP::Server::Context.new(original_request, original_response)
+
+      BrowserScopedReplacementCookieRequestContext.new(original_context)
+
+      cookie = original_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
+      cookie.value.should eq(session_id.to_s)
+      cookie.max_age.should eq(2.hours)
+    end
+
     it "allows only new and replacement cookie lifetimes to be overridden" do
       request_context = BrowserScopedNewSessionCookieRequestContext.new
 
@@ -159,7 +173,7 @@ describe Crumble::Server::RequestContext do
 
           request_context.session.should be_a(Crumble::Server::SessionDecorator)
           request_context.session.session.should eq(existing_session)
-          original_response.cookies.has_key?(Crumble::Server::RequestContext::SESSION_COOKIE_NAME).should be_false
+          original_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].value.should eq(existing_session_key.to_s)
         end
       end
 
@@ -175,7 +189,7 @@ describe Crumble::Server::RequestContext do
 
           request_context.session.id.should eq(existing_session_key)
           Crumble::Server::RequestContext.session_store.has_key?(existing_session_key).should be_true
-          original_response.cookies.has_key?(Crumble::Server::RequestContext::SESSION_COOKIE_NAME).should be_false
+          original_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME].value.should eq(existing_session_key.to_s)
         end
       end
     end

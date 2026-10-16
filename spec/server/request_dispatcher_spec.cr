@@ -210,7 +210,9 @@ describe Crumble::Server::RequestDispatcher do
     second_request.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME] = cookie.value
     second_response = dispatch_request(handler, second_request)
 
-    second_response.headers.has_key?("Set-Cookie").should be_false
+    refreshed_cookie = second_response.cookies[Crumble::Server::RequestContext::SESSION_COOKIE_NAME]
+    refreshed_cookie.value.should eq(cookie.value)
+    refreshed_cookie.max_age.should be_nil
     second_response.body.should eq("session blah=2")
   end
 end
