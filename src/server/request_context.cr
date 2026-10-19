@@ -107,7 +107,10 @@ class Crumble::Server::RequestContext
 
     session_key = if cookie = request.cookies[SESSION_COOKIE_NAME]?
                     if uuid = UUID.parse?(cookie.value)
-                      SessionKey.new(uuid)
+                      session_key = SessionKey.new(uuid)
+                      # Reissuing an existing cookie makes max-age relative to the latest request.
+                      write_session_cookie(session_key, session_cookie_max_age)
+                      session_key
                     else
                       # Bad client cookies should not break requests that never touch sessions.
                       set_new_session_key_cookie
