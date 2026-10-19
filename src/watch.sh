@@ -29,7 +29,7 @@ if [ -f "Dockerfile" ] && command -v docker > /dev/null 2>&1 && docker info > /d
 
   # Removing the previous container before each run also cleans up containers
   # left behind when watchexec stops the foreground Docker client on a rebuild.
-  watchexec -r -w src -w lib -w shard.yml -w shard.lock -w Dockerfile --no-vcs-ignore "docker build -t '$IMAGE_NAME' . && (docker rm -f '$CONTAINER_NAME' > /dev/null 2>&1 || true) && docker run --rm --name '$CONTAINER_NAME' -e DATABASE_URL -e ORMA_CONTINUOUS_MIGRATION -e LOG_LEVEL $PUBLISH_PORT '$IMAGE_NAME' -p '$PORT'" &
+  watchexec -r -w src -w lib -w shard.yml -w shard.lock -w Dockerfile --no-vcs-ignore "docker build -t '$IMAGE_NAME' . && (docker rm -f '$CONTAINER_NAME' > /dev/null 2>&1 || true) && docker run --rm --name '$CONTAINER_NAME' -e DATABASE_URL -e ORMA_CONTINUOUS_MIGRATION -e LOG_LEVEL -v '$PWD:/workspace' -w /workspace $PUBLISH_PORT '$IMAGE_NAME' crystal run --error-trace '$SRC_FILENAME' -- -p '$PORT'" &
   WATCH_PID=$!
 
   echo "Press Ctrl+C to stop"
