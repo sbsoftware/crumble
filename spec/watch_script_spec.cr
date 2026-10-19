@@ -12,6 +12,11 @@ describe "watch.sh" do
     shared_script.should contain(%(if [ "$PORT" != "0" ]))
   end
 
+  it "runs the application source without requiring an image entrypoint" do
+    shared_script.should contain(%(-v '$PWD:/workspace' -w /workspace))
+    shared_script.should contain(%('$IMAGE_NAME' crystal run --error-trace '$SRC_FILENAME' -- -p '$PORT'))
+  end
+
   it "retains the local Crystal build fallback" do
     shared_script.should contain("crystal build --error-trace")
     shared_script.should contain(%(watchexec -r -w "./bin"))
