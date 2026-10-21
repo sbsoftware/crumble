@@ -9,12 +9,29 @@ describe "watch.sh" do
     shared_script.should contain("docker build")
     shared_script.should contain("docker run")
     shared_script.should contain(%(-w Dockerfile))
+    shared_script.should contain(%(-w Dockerfile -w .env))
     shared_script.should contain(%(if [ "$PORT" != "0" ]))
   end
 
-  it "runs the application source without requiring an image entrypoint" do
+  it "restarts source changes inside the existing container" do
     shared_script.should contain(%(-v '$PWD:/workspace' -w /workspace))
-    shared_script.should contain(%('$IMAGE_NAME' crystal run --error-trace '$SRC_FILENAME' -- -p '$PORT'))
+    shared_script.should contain(%(watchexec -r --poll 1000 -w src -w lib -e cr))
+    shared_script.should_not contain(%(-w shard.yml))
+    shared_script.should_not contain(%(-w shard.lock))
+  end
+
+  it "runs once with a hint when the image does not contain watchexec" do
+    shared_script.should contain(%(if command -v watchexec > /dev/null 2>&1))
+    shared_script.should contain("watchexec missing in image; running without restart-on-change")
+    shared_script.should contain(%(exec crystal run --error-trace "$SRC_FILENAME" -- -p "$PORT"))
+  end
+
+  it "rebuilds only when Dockerfile changes" do
+    shared_script.should contain("--emit-events-to=environment")
+    shared_script.should contain(%(grep -q 'Dockerfile'))
+    shared_script.should contain(%(. ./.env))
+    shared_script.should contain("EVENT_PATHS")
+    shared_script.should contain("::::")
   end
 
   it "retains the local Crystal build fallback" do
