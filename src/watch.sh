@@ -1,11 +1,17 @@
 #!/usr/bin/env sh
 
+if [ "$1" = "--docker-run" ]; then
+  exec crystal run --error-trace "$2" -- -p "$3"
+fi
+
 if [ "$1" = "--docker-container" ]; then
   SRC_FILENAME=$2
   PORT=$3
 
   if command -v watchexec > /dev/null 2>&1; then
-    exec watchexec -r --poll 1000 -w src -w lib -e cr -- sh -c 'crystal run --error-trace "$1" -- -p "$2"' sh "$SRC_FILENAME" "$PORT"
+    # Re-enter this script so watchexec can pass the source and port as regular
+    # arguments, without interpolating them into another shell command.
+    exec watchexec -r --poll 1000 -w src -w lib -e cr -- sh "$0" --docker-run "$SRC_FILENAME" "$PORT"
   fi
 
   echo "watchexec missing in image; running without restart-on-change. Install watchexec in the development image to enable automatic restarts." >&2

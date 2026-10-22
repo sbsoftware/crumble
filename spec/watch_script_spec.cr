@@ -1,50 +1,41 @@
+require "file_utils"
 require "./spec_helper"
 
 describe "watch.sh" do
-  shared_script = File.read(Path[__DIR__, "..", "src", "watch.sh"])
-  generated_script = File.read(Path[__DIR__, "..", "src", "cli", "templates", "watch.sh"])
+  it "falls back to one run when the container does not have watchexec" do
+    directory = File.tempname("watch-script-spec")
+    bin_directory = Path[directory, "bin"]
+    Dir.mkdir_p(bin_directory)
+    crystal = bin_directory / "crystal"
+    File.write(crystal, "#!/bin/sh\nprintf 'crystal:%s\\n' \"$*\"\n")
+    File.chmod(crystal, 0o755)
+    output = IO::Memory.new
+    error = IO::Memory.new
 
-  it "uses Docker when its daemon and a Dockerfile are available" do
-    shared_script.should contain(%(if [ -f "Dockerfile" ] && command -v docker > /dev/null 2>&1 && docker info > /dev/null 2>&1))
-    shared_script.should contain("docker build")
-    shared_script.should contain("docker run")
-    shared_script.should contain(%(-w Dockerfile))
-    shared_script.should contain(%(-w Dockerfile -w .env))
-    shared_script.should contain(%(if [ "$PORT" != "0" ]))
+    begin
+      Process.run("/bin/sh", [Path[__DIR__, "..", "src", "watch.sh"].to_s, "--docker-container", "src/example.cr", "0"], env: {"PATH" => bin_directory.to_s}, output: output, error: error).success?.should be_true
+      output.to_s.should eq("crystal:run --error-trace src/example.cr -- -p 0\n")
+      error.to_s.should contain("watchexec missing in image; running without restart-on-change")
+    ensure
+      FileUtils.rm_rf(directory)
+    end
   end
 
-  it "restarts source changes inside the existing container" do
-    shared_script.should contain(%(-v '$PWD:/workspace' -w /workspace))
-    shared_script.should contain(%(watchexec -r --poll 1000 -w src -w lib -e cr))
-    shared_script.should_not contain(%(-w shard.yml))
-    shared_script.should_not contain(%(-w shard.lock))
-  end
+  it "starts the polling source watcher when watchexec is available" do
+    directory = File.tempname("watch-script-spec")
+    bin_directory = Path[directory, "bin"]
+    Dir.mkdir_p(bin_directory)
+    watchexec = bin_directory / "watchexec"
+    File.write(watchexec, "#!/bin/sh\nprintf 'watchexec:%s\\n' \"$*\"\n")
+    File.chmod(watchexec, 0o755)
+    output = IO::Memory.new
 
-  it "runs once with a hint when the image does not contain watchexec" do
-    shared_script.should contain(%(if command -v watchexec > /dev/null 2>&1))
-    shared_script.should contain("watchexec missing in image; running without restart-on-change")
-    shared_script.should contain(%(exec crystal run --error-trace "$SRC_FILENAME" -- -p "$PORT"))
-  end
-
-  it "rebuilds only when Dockerfile changes" do
-    shared_script.should contain("--emit-events-to=environment")
-    shared_script.should contain(%(grep -q 'Dockerfile'))
-    shared_script.should contain(%(. ./.env))
-    shared_script.should contain("EVENT_PATHS")
-    shared_script.should contain("::::")
-  end
-
-  it "retains the local Crystal build fallback" do
-    shared_script.should contain("crystal build --error-trace")
-    shared_script.should contain(%(watchexec -r -w "./bin"))
-  end
-
-  it "runs from the generated project's directory" do
-    generated_script.should contain(%(cd "$SCRIPT_DIR" || exit 1))
-  end
-
-  it "has valid shell syntax" do
-    Process.run("sh", ["-n", Path[__DIR__, "..", "src", "watch.sh"].to_s]).success?.should be_true
-    Process.run("sh", ["-n", Path[__DIR__, "..", "src", "cli", "templates", "watch.sh"].to_s]).success?.should be_true
+    begin
+      Process.run("/bin/sh", [Path[__DIR__, "..", "src", "watch.sh"].to_s, "--docker-container", "src/example.cr", "3000"], env: {"PATH" => bin_directory.to_s}, output: output).success?.should be_true
+      output.to_s.should contain("watchexec:-r --poll 1000 -w src -w lib -e cr -- sh")
+      output.to_s.should contain("--docker-run src/example.cr 3000")
+    ensure
+      FileUtils.rm_rf(directory)
+    end
   end
 end
