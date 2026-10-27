@@ -1,5 +1,6 @@
 require "option_parser"
 require "yaml"
+require "./cli/init_gitignore"
 
 class Crumble::CLI
   enum Command
@@ -76,6 +77,7 @@ class Crumble::CLI
     ensure_file("watch.sh", watch_script_template, 0o755)
     ensure_file("Dockerfile", {{read_file "#{__DIR__}/cli/templates/Dockerfile"}})
     ensure_file("AGENTS.md", {{read_file "#{__DIR__}/cli/templates/AGENTS.md"}})
+    Crumble::InitGitignore.ensure_tmp
   end
 
   def watch_script_template
